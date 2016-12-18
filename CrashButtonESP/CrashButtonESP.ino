@@ -20,7 +20,7 @@
 
 #define BRIGHTNESS 50
 
-const char* wifiSSID = "todbot";
+const char* wifiSSID = "todbotss";
 const char* wifiPasswd = "";
 
 #define mins_max 5
@@ -35,19 +35,35 @@ Ticker ledticker;
 
 ESP8266WiFiMulti WiFiMulti;
 
+typedef enum ButtonModes {
+    MODE_UNKNOWN = 0,
+    MODE_STARTUP,     // not joined AP yet, 
+    MODE_CLOSED,      // "closed" button hasn't been pressed in a while, color: yellow 
+    MODE_PRESSED,     // user pressed button, but before app has fetched state
+    MODE_OPEN,        // shows current open time 
+    MODE_ERROR        // error of some kind, flash error, color: red
+} ButtonMode;
 
-enum ledmodes {
+typedef enum LedModes {
   MODE_OFF = 0,
   MODE_PRESET,
   MODE_SOLID,
   MODE_SINELON,
   MODE_BREATHE,
-  MODE_SECTOR
-};
+  MODE_SECTOR,
+  MODE_SECTORBREATHE
+} LedMode;
 
-int ledMode = MODE_OFF;
+ButtonMode buttonMode = MODE_STARTUP;
+LedMode ledMode = MODE_OFF;
+//int buttonMode = MODE_UNKNOWN;
+
+//int ledMode = MODE_OFF;
 uint8_t ledHue = 0; // rotating "base color" used by many of the patterns
-int ledcnt = 0;
+int ledSpeed = 100;
+int ledCnt = NUM_LEDS;
+int ledRangeL = 0;
+int ledRangeH = 255;
 
 CRGB leds[NUM_LEDS];
 
@@ -78,21 +94,22 @@ void setup()
     fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
     FastLED.show();
     
+    ledticker.attach_ms( ledUpdateMillis, ledUpdate );    
+    
     for (uint8_t t = 4; t > 0; t--) {
-        Serial.printf("[setup] waiting %d...\n", t);
+        Serial.printf("[setupa] waiting %d...\n", t);
         Serial.flush();
         blinkBuiltIn( 1, 100);
+        ledCnt = ledCnt - (ledCnt / 3);
         delay(800);
     }
     
     WiFiMulti.addAP(wifiSSID, wifiPasswd);
-    
-    ledticker.attach_ms( ledUpdateMillis, ledUpdate );    
+
     
     digitalWrite( LED_BUILTIN, HIGH); // off
     Serial.println("[setup] done");
 }
-
 
 //
 void loop()
@@ -108,31 +125,74 @@ void loop()
 
 }
 
+void buttonModeToLedMode() 
+{
+    if( buttonMode == MODE_STARTUP ) { 
+        ledHue = 192; 
+        ledMode = MODE_BREATHE;
+//        ledCnt = NUM_LEDS;
+        ledSpeed = 100;
+        ledRangeL = 0;
+        ledRangeH = 255;
+    }
+    else if( buttonMode == MODE_CLOSED ) {
+        ledHue = 64; // yellow
+        ledMode = MODE_BREATHE;
+        ledCnt = NUM_LEDS;
+        ledSpeed = 15;
+        ledRangeL = 100;
+        ledRangeH = 255;        
+    }
+    else if( buttonMode == MODE_PRESSED ) { 
+        ledMode = MODE_SOLID; // fixme
+        ledHue = 128; // cyan
+        ledCnt = NUM_LEDS;
+    }
+    else if( buttonMode == MODE_OPEN ) {
+        ledHue = 128; // aqua
+        ledMode = MODE_BREATHE;
+        // ledCnt set elsewhere
+        ledSpeed = 15;
+        ledRangeL = 100;
+        ledRangeH = 255;        
+    }
+    else if( buttonMode == MODE_ERROR ) {
+        ledMode = MODE_BREATHE;
+        ledHue = 0;
+        ledSpeed = 120;
+        ledRangeL = 0;
+        ledRangeH = 255;        
+    }
+}
+
 // called periodically from Ticker
 void ledUpdate()
 {
+    buttonModeToLedMode();
+    
 //  uint32_t now = millis();
 //  if ( (now - lastLedUpdateMillis) < ledUpdateMillis ) {
 //    return;
 //  }
 //  lastLedUpdateMillis = now;
 
-  if ( ledMode == MODE_OFF ) {
+  if( ledMode == MODE_OFF ) {
     fadeToBlackBy( leds, NUM_LEDS, 255);
   }
-  else if ( ledMode == MODE_SOLID ) {
-    fill_solid( leds, NUM_LEDS, CHSV(ledHue, 255, 255) );
+  else if( ledMode == MODE_SOLID ) {
+    fill_solid( leds, ledCnt, CHSV(ledHue, 255, 255) );
   }
-  else if ( ledMode == MODE_PRESET ) {
+  else if( ledMode == MODE_PRESET ) {
     // do nothing
   }
-  else if ( ledMode == MODE_SECTOR ) {
-    for ( int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = 0;
-    }
-    for ( int i = 0; i < ledcnt; i++) {
-      leds[i] = CHSV(ledHue, 255, 255);
-    }
+  else if( ledMode == MODE_SECTOR ) {
+    fill_solid( leds, NUM_LEDS, 0 );
+    fill_solid( leds, ledCnt, CHSV(ledHue, 255, 255) );
+  }
+  else if( ledMode == MODE_BREATHE ) {
+    int breathe = beatsin8( ledSpeed, ledRangeL, ledRangeH);
+    fill_solid( leds, NUM_LEDS, 0 );
+    fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
   }
   else if ( ledMode == MODE_SINELON ) {
     // a colored dot sweeping back and forth, with fading trails
@@ -140,35 +200,28 @@ void ledUpdate()
     int pos = beatsin16(13, 0, NUM_LEDS);
     leds[pos] += CHSV( ledHue, 255, 255);
   }
-  else if ( ledMode == MODE_BREATHE ) {
-    //        float breathe = (exp(sin(millis()/2000.0*PI)) - 0.36787944)*108.0;
-    int breathe = beatsin8( 15, 0, 255);
-    fill_solid( leds, NUM_LEDS, CHSV(ledHue, 255, breathe) );
-  }
   FastLED.show();
 }
 
 
 void buttonCheck()
 {
-  int b = digitalRead( BUTTONPIN );
-  if ( b == HIGH  ) { // not pressed
-    return;
-  }
-  Serial.println("PRESS");
-    
-  ledHue = 128; // cyan
-  ledMode = MODE_SOLID; // fixme
+    int b = digitalRead( BUTTONPIN );
+    if ( b == HIGH  ) { // not pressed
+        return;
+    }
+    Serial.println("PRESS");
 
-  uint32_t now = millis();   
-  if ( (now < buttonMillis) || ((now - lastButtonTime) > buttonMillis) ) {
-      Serial.println("PRESS for reals");
-      lastButtonTime = millis();
-      doPress = true;
-      lastFetchMillis -= fetchMillis; // do fetch now
-  }
+    buttonMode = MODE_PRESSED;
+
+    uint32_t now = millis();   
+    if ( (now < buttonMillis) || ((now - lastButtonTime) > buttonMillis) ) {
+        Serial.println("PRESS for reals");
+        lastButtonTime = millis();
+        doPress = true;
+        lastFetchMillis -= fetchMillis; // signal: do fetch now
+    }
 }
-
 
 //
 //
@@ -216,7 +269,8 @@ void fetchJson()
 
   digitalWrite(LED_BUILTIN, HIGH); // off
   doPress = false;
-  delay(100);
+  
+  delay(100); // FIXME: why is this here?
 }
 
 //
@@ -229,25 +283,24 @@ bool handleJson(String jsonstr)
   // Test if parsing succeeds.
   if (!root.success()) {
     Serial.println("parseObject() failed");
+    // FIXME: add error handling
     return false;
   }
 
   bool is_open = root["is_open"];
   double minutes_left = root["minutes_left"];
 
-  Serial.printf("is_open:%d", is_open);
+  Serial.printf("is_open:%d", is_open); // NOTE: the below fails for -0.99 to -0.01
   Serial.printf(", minutes_left: %d.%d\n", (int)minutes_left, getDecimal(minutes_left));
 
   if ( minutes_left > 0 ) {
     minutes_left = (minutes_left > 60) ? 60 : minutes_left;
-    ledcnt =  1 + NUM_LEDS * minutes_left / 60;
-    Serial.print("ledcnt:"); Serial.println(ledcnt);
-    ledHue = 128; // aqua
-    ledMode = MODE_SECTOR;
+    ledCnt =  1 + NUM_LEDS * minutes_left / 60;
+    Serial.print("ledCnt:"); Serial.println(ledCnt);
+    buttonMode = MODE_OPEN;
   }
   else {
-    ledHue = 64; // yellow
-    ledMode = MODE_BREATHE;
+    buttonMode = MODE_CLOSED;
   }
 
 }
