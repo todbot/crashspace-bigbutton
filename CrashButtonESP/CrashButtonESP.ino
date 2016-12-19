@@ -12,10 +12,12 @@
 #include <ESP8266HTTPClient.h>
 #include <Ticker.h>
 
-#include <ArduinoJson.h>
+#define FASTLED_ALLOW_INTERRUPTS 0
 #include <FastLED.h>
 
-#define NUM_LEDS 5
+#include <ArduinoJson.h>
+
+#define NUM_LEDS 25
 #define LEDPIN D1  // (pin D1 on NodeMCU board)
 #define BUTTONPIN D2
 
@@ -26,9 +28,9 @@ const char* wifiPasswd = " ";
 
 const char* httpurl_stat   = "http://crashspacela.com/sign2/?output=jsonmin";
 const char* httpurl_press  = "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15&debug=1";
-// SSL Certificate finngerprint for the host
 const char* httpsurl = "https://crashspacela.com/sign2/?output=jsonmin";
 const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
+// SSL Certificate finngerprint for the host
 
 Ticker ledticker;
 
@@ -44,13 +46,13 @@ typedef enum ButtonModes {
 } ButtonMode;
 
 typedef enum LedModes {
-  MODE_OFF = 0,
-  MODE_PRESET,
-  MODE_SOLID,
-  MODE_SINELON,
-  MODE_BREATHE,
-  MODE_SECTOR,
-  MODE_SECTORBREATHE
+    MODE_OFF = 0,
+    MODE_PRESET,
+    MODE_SOLID,
+    MODE_SINELON,
+    MODE_BREATHE,
+    MODE_SECTOR,
+    MODE_SECTORBREATHE
 } LedMode;
 
 ButtonMode buttonMode = MODE_STARTUP;
@@ -93,7 +95,7 @@ void setup()
     fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
     FastLED.show();
     
-    ledticker.attach_ms( ledUpdateMillis, ledUpdate );    
+    ledticker.attach_ms( ledUpdateMillis, ledUpdate );
     
     for (uint8_t t = 4; t > 0; t--) {
         Serial.printf("[setupa] waiting %d...\n", t);
@@ -154,7 +156,7 @@ void buttonModeToLedMode()
     }
     else if( buttonMode == MODE_OPEN ) {
         ledHue = 128; // aqua
-        ledMode = MODE_BREATHE;
+        ledMode = MODE_SECTORBREATHE;
         // ledCnt set elsewhere
         ledSpeed = 15;
         ledRangeL = 100;
@@ -188,6 +190,14 @@ void ledUpdate()
         int breathe = beatsin8( ledSpeed, ledRangeL, ledRangeH);
         fill_solid( leds, NUM_LEDS, 0 );
         fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
+    }
+    else if( ledMode == MODE_SECTORBREATHE ) { 
+        int breathe = beatsin8( ledSpeed, ledRangeL, ledRangeH);        
+        fill_solid( leds, NUM_LEDS, 0 );
+        fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
+        if( ledCnt > 0 ) { 
+            leds[ledCnt-1] = CHSV(ledHue, 120, breathe); //CRGB(breathe,breathe,breathe);
+        }
     }
     else if ( ledMode == MODE_SINELON ) {
         // a colored dot sweeping back and forth, with fading trails
@@ -238,7 +248,8 @@ void fetchJson()
     digitalWrite(LED_BUILTIN, LOW);
     Serial.print("[http] begin...");
     Serial.print( chipId ); Serial.print(": ");
-    Serial.println( freesize );
+    Serial.print( freesize );
+    Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
 
     HTTPClient http;
 
