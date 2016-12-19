@@ -156,13 +156,12 @@
 </layers>
 <board>
 <plain>
-<wire x1="0" y1="0" x2="77.47" y2="0" width="0" layer="20"/>
-<wire x1="77.47" y1="0" x2="152.38" y2="0" width="0" layer="20"/>
-<wire x1="152.38" y1="0" x2="152.38" y2="102.54" width="0" layer="20"/>
-<wire x1="152.38" y1="102.54" x2="0" y2="102.54" width="0" layer="20"/>
-<wire x1="0" y1="102.54" x2="0" y2="0" width="0" layer="20"/>
-<wire x1="77.47" y1="0" x2="76.2" y2="101.6" width="0.0254" layer="20" curve="-181.432096"/>
-<wire x1="76.2" y1="101.6" x2="77.47" y2="0" width="0.0254" layer="20" curve="-177.100032"/>
+<wire x1="52.07" y1="0" x2="50.8" y2="101.6" width="0.0254" layer="20" curve="-181.432096"/>
+<wire x1="50.8" y1="101.6" x2="52.07" y2="0" width="0.0254" layer="20" curve="-177.100032"/>
+<wire x1="-26.67" y1="50.8" x2="124.46" y2="50.8" width="0.0254" layer="48" style="longdash"/>
+<wire x1="50.8" y1="109.22" x2="50.8" y2="-16.51" width="0.0254" layer="48" style="longdash"/>
+<wire x1="-26.67" y1="101.6" x2="124.46" y2="101.6" width="0.0254" layer="48" style="longdash"/>
+<wire x1="-26.67" y1="0" x2="124.46" y2="0" width="0.0254" layer="48" style="longdash"/>
 </plain>
 <libraries>
 <library name="SparkFun-Switches">
@@ -380,6 +379,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </library>
 </libraries>
 <attributes>
+<attribute name="CIRCULAR-LAYOUT-SETTINGS" value="2.000000 2.000000 1.800000 0.000000 0 0"/>
 </attributes>
 <variantdefs>
 </variantdefs>
@@ -564,29 +564,30 @@ design rules under a new name.</description>
 </pass>
 </autorouter>
 <elements>
-<element name="S1" library="SparkFun-Switches" package="TACTILE_SWITCH_PTH_12MM" value="MOMENTARY-SWITCH-SPST-PTH-12MM" x="53.34" y="50.8" rot="R90">
-<attribute name="SF_SKU" value="COM-09190" x="60.96" y="72.39" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="PROD_ID" value="SWCH-09185" x="60.96" y="72.39" size="1.778" layer="27" rot="R90" display="off"/>
+<element name="S1" library="SparkFun-Switches" package="TACTILE_SWITCH_PTH_12MM" value="MOMENTARY-SWITCH-SPST-PTH-12MM" x="27.94" y="50.8" rot="R90">
+<attribute name="SF_SKU" value="COM-09190" x="35.56" y="72.39" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="PROD_ID" value="SWCH-09185" x="35.56" y="72.39" size="1.778" layer="27" rot="R90" display="off"/>
 </element>
-<element name="U1" library="ESP12E_DEVKIT" package="ESP12E_DEVKIT" value="ESP12E_DEVKIT" x="76.2" y="52.07"/>
-<element name="LED1" library="adafruit" package="WS2812B" value="WS2812B5050" x="3.81" y="-3.81"/>
-<element name="LED2" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-10.16"/>
-<element name="LED3" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-16.51"/>
-<element name="LED4" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-22.86"/>
-<element name="LED5" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-29.21"/>
-<element name="LED6" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-35.56"/>
-<element name="LED7" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-41.91"/>
-<element name="LED8" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-48.26"/>
-<element name="LED9" library="adafruit" package="WS2812B" value="WS2812B5050" x="5.08" y="-48.26"/>
-<element name="LED10" library="adafruit" package="WS2812B" value="WS2812B5050" x="-3.81" y="-54.61"/>
-<element name="LED11" library="adafruit" package="WS2812B" value="WS2812B5050" x="5.08" y="-54.61"/>
-<element name="R1" library="SparkFun-Resistors" package="0603" value="470" x="-5.08" y="-59.69">
-<attribute name="PROD_ID" value="RES-07869" x="-5.08" y="-59.69" size="1.778" layer="27" display="off"/>
+<element name="U1" library="ESP12E_DEVKIT" package="ESP12E_DEVKIT" value="ESP12E_DEVKIT" x="50.8" y="54.61"/>
+<element name="LED1" library="adafruit" package="WS2812B" value="WS2812B5050" x="50.8" y="96.52"/>
+<element name="LED2" library="adafruit" package="WS2812B" value="WS2812B5050" x="73.66" y="90.3946875" rot="R330"/>
+<element name="LED3" library="adafruit" package="WS2812B" value="WS2812B5050" x="90.3946875" y="73.66" rot="R300"/>
+<element name="LED4" library="adafruit" package="WS2812B" value="WS2812B5050" x="96.52" y="50.8" rot="R270"/>
+<element name="LED5" library="adafruit" package="WS2812B" value="WS2812B5050" x="90.3946875" y="27.94" rot="R240"/>
+<element name="LED6" library="adafruit" package="WS2812B" value="WS2812B5050" x="73.66" y="11.2053125" rot="R210"/>
+<element name="LED7" library="adafruit" package="WS2812B" value="WS2812B5050" x="50.8" y="5.08" rot="R180"/>
+<element name="LED8" library="adafruit" package="WS2812B" value="WS2812B5050" x="27.94" y="11.2053125" rot="R150"/>
+<element name="LED9" library="adafruit" package="WS2812B" value="WS2812B5050" x="11.2053125" y="27.94" rot="R120"/>
+<element name="LED10" library="adafruit" package="WS2812B" value="WS2812B5050" x="5.08" y="50.8" rot="R90"/>
+<element name="LED11" library="adafruit" package="WS2812B" value="WS2812B5050" x="11.2053125" y="73.66" rot="R60"/>
+<element name="R1" library="SparkFun-Resistors" package="0603" value="470" x="71.12" y="66.04">
+<attribute name="PROD_ID" value="RES-07869" x="71.12" y="66.04" size="1.778" layer="27" display="off"/>
 </element>
-<element name="S2" library="SparkFun-Switches" package="TACTILE_SWITCH_PTH_12MM" value="MOMENTARY-SWITCH-SPST-PTH-12MM" x="1.27" y="-68.58">
-<attribute name="SF_SKU" value="COM-09190" x="1.27" y="-68.58" size="1.778" layer="27" display="off"/>
-<attribute name="PROD_ID" value="SWCH-09185" x="1.27" y="-68.58" size="1.778" layer="27" display="off"/>
+<element name="S2" library="SparkFun-Switches" package="TACTILE_SWITCH_PTH_12MM" value="MOMENTARY-SWITCH-SPST-PTH-12MM" x="73.66" y="50.8" rot="R90">
+<attribute name="SF_SKU" value="COM-09190" x="73.66" y="50.8" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="PROD_ID" value="SWCH-09185" x="73.66" y="50.8" size="1.778" layer="27" rot="R90" display="off"/>
 </element>
+<element name="LED12" library="adafruit" package="WS2812B" value="WS2812B5050" x="27.94" y="90.3946875" rot="R30"/>
 </elements>
 <signals>
 <signal name="GND">
@@ -604,64 +605,66 @@ design rules under a new name.</description>
 <contactref element="S1" pad="3"/>
 <contactref element="U1" pad="GND@1"/>
 <contactref element="S2" pad="3"/>
-<wire x1="64.77" y1="36.83" x2="50.84" y2="57.05" width="0" layer="19" extent="1-1"/>
-<wire x1="1.36" y1="-2.16" x2="64.77" y2="36.83" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-8.51" x2="1.36" y2="-2.16" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-14.86" x2="-6.26" y2="-8.51" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-21.21" x2="-6.26" y2="-14.86" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-27.56" x2="-6.26" y2="-21.21" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-33.91" x2="-6.26" y2="-27.56" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-40.26" x2="-6.26" y2="-33.91" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-46.61" x2="-6.26" y2="-40.26" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.26" y1="-52.96" x2="-6.26" y2="-46.61" width="0" layer="19" extent="1-1"/>
-<wire x1="2.63" y1="-52.96" x2="-6.26" y2="-52.96" width="0" layer="19" extent="1-1"/>
-<wire x1="2.63" y1="-46.61" x2="2.63" y2="-52.96" width="0" layer="19" extent="1-1"/>
-<wire x1="7.52" y1="-66.08" x2="2.63" y2="-52.96" width="0" layer="19" extent="1-1"/>
+<contactref element="LED12" pad="3-GND"/>
+<wire x1="93.048628125" y1="29.236759375" x2="93.048628125" y2="29.236759375" width="0" layer="19" extent="1-1"/>
+<wire x1="76.606759375" y1="11.00136875" x2="93.048628125" y2="29.236759375" width="0" layer="19" extent="1-1"/>
+<wire x1="11.00136875" y1="24.9932375" x2="76.606759375" y2="11.00136875" width="0" layer="19" extent="1-1"/>
+<wire x1="29.236759375" y1="8.55136875" x2="11.00136875" y2="24.9932375" width="0" layer="19" extent="1-1"/>
+<wire x1="11.00136875" y1="24.9932375" x2="29.236759375" y2="8.55136875" width="0" layer="19" extent="1-1"/>
+<wire x1="3.43" y1="48.35" x2="11.00136875" y2="24.9932375" width="0" layer="19" extent="1-1"/>
+<wire x1="8.55136875" y1="72.3632375" x2="3.43" y2="48.35" width="0" layer="19" extent="1-1"/>
+<wire x1="25.44" y1="57.05" x2="8.55136875" y2="72.3632375" width="0" layer="19" extent="1-1"/>
+<wire x1="48.35" y1="98.17" x2="25.44" y2="57.05" width="0" layer="19" extent="1-1"/>
+<wire x1="39.37" y1="39.37" x2="25.44" y2="57.05" width="0" layer="19" extent="1-1"/>
+<wire x1="72.3632375" y1="93.048628125" x2="48.35" y2="98.17" width="0" layer="19" extent="1-1"/>
+<wire x1="90.598628125" y1="76.606759375" x2="72.3632375" y2="93.048628125" width="0" layer="19" extent="1-1"/>
+<wire x1="71.16" y1="57.05" x2="76.606759375" y2="11.00136875" width="0" layer="19" extent="1-1"/>
+<wire x1="24.9932375" y1="90.598628125" x2="3.43" y2="48.35" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$1">
 <contactref element="LED1" pad="2-DOUT"/>
 <contactref element="LED2" pad="4-DIN"/>
-<wire x1="6.26" y1="-2.16" x2="-6.26" y2="-11.81" width="0" layer="19" extent="1-1"/>
+<wire x1="53.25" y1="98.17" x2="70.7132375" y2="90.19074375" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$2">
 <contactref element="LED2" pad="2-DOUT"/>
 <contactref element="LED3" pad="4-DIN"/>
-<wire x1="-1.36" y1="-8.51" x2="-6.26" y2="-18.16" width="0" layer="19" extent="1-1"/>
+<wire x1="76.606759375" y1="90.598628125" x2="87.74074375" y2="74.956759375" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$3">
 <contactref element="LED3" pad="2-DOUT"/>
 <contactref element="LED4" pad="4-DIN"/>
-<wire x1="-1.36" y1="-14.86" x2="-6.26" y2="-24.51" width="0" layer="19" extent="1-1"/>
+<wire x1="93.048628125" y1="72.3632375" x2="94.87" y2="53.25" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$4">
 <contactref element="LED4" pad="2-DOUT"/>
 <contactref element="LED5" pad="4-DIN"/>
-<wire x1="-1.36" y1="-21.21" x2="-6.26" y2="-30.86" width="0" layer="19" extent="1-1"/>
+<wire x1="98.17" y1="48.35" x2="90.19074375" y2="30.886759375" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$5">
 <contactref element="LED5" pad="2-DOUT"/>
 <contactref element="LED6" pad="4-DIN"/>
-<wire x1="-1.36" y1="-27.56" x2="-6.26" y2="-37.21" width="0" layer="19" extent="1-1"/>
+<wire x1="90.598628125" y1="24.9932375" x2="74.956759375" y2="13.859253125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$6">
 <contactref element="LED6" pad="2-DOUT"/>
 <contactref element="LED7" pad="4-DIN"/>
-<wire x1="-1.36" y1="-33.91" x2="-6.26" y2="-43.56" width="0" layer="19" extent="1-1"/>
+<wire x1="72.3632375" y1="8.55136875" x2="53.25" y2="6.73" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$7">
 <contactref element="LED8" pad="2-DOUT"/>
 <contactref element="LED9" pad="4-DIN"/>
-<wire x1="2.63" y1="-49.91" x2="-1.36" y2="-46.61" width="0" layer="19" extent="1-1"/>
+<wire x1="13.859253125" y1="26.6432375" x2="24.9932375" y2="11.00136875" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$8">
 <contactref element="LED9" pad="2-DOUT"/>
 <contactref element="LED10" pad="4-DIN"/>
-<wire x1="7.53" y1="-46.61" x2="-6.26" y2="-56.26" width="0" layer="19" extent="1-1"/>
+<wire x1="8.55136875" y1="29.236759375" x2="6.73" y2="48.35" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$9">
 <contactref element="LED10" pad="2-DOUT"/>
 <contactref element="LED11" pad="4-DIN"/>
-<wire x1="-1.36" y1="-52.96" x2="2.63" y2="-56.26" width="0" layer="19" extent="1-1"/>
+<wire x1="3.43" y1="53.25" x2="11.409253125" y2="70.7132375" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="5V">
 <contactref element="LED1" pad="1-VDD"/>
@@ -676,17 +679,19 @@ design rules under a new name.</description>
 <contactref element="LED10" pad="1-VDD"/>
 <contactref element="LED11" pad="1-VDD"/>
 <contactref element="U1" pad="VIN"/>
-<wire x1="6.26" y1="-5.46" x2="64.77" y2="34.29" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-11.81" x2="6.26" y2="-5.46" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-18.16" x2="-1.36" y2="-11.81" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-24.51" x2="-1.36" y2="-18.16" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-30.86" x2="-1.36" y2="-24.51" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-37.21" x2="-1.36" y2="-30.86" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-43.56" x2="-1.36" y2="-37.21" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-49.91" x2="-1.36" y2="-43.56" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.36" y1="-56.26" x2="-1.36" y2="-49.91" width="0" layer="19" extent="1-1"/>
-<wire x1="7.53" y1="-56.26" x2="-1.36" y2="-56.26" width="0" layer="19" extent="1-1"/>
-<wire x1="7.53" y1="-49.91" x2="7.53" y2="-56.26" width="0" layer="19" extent="1-1"/>
+<contactref element="LED12" pad="1-VDD"/>
+<wire x1="87.74074375" y1="26.6432375" x2="87.74074375" y2="26.6432375" width="0" layer="19" extent="1-1"/>
+<wire x1="70.7132375" y1="11.409253125" x2="87.74074375" y2="26.6432375" width="0" layer="19" extent="1-1"/>
+<wire x1="11.409253125" y1="30.886759375" x2="70.7132375" y2="11.409253125" width="0" layer="19" extent="1-1"/>
+<wire x1="26.6432375" y1="13.859253125" x2="11.409253125" y2="30.886759375" width="0" layer="19" extent="1-1"/>
+<wire x1="11.409253125" y1="30.886759375" x2="26.6432375" y2="13.859253125" width="0" layer="19" extent="1-1"/>
+<wire x1="39.37" y1="36.83" x2="11.409253125" y2="30.886759375" width="0" layer="19" extent="1-1"/>
+<wire x1="6.73" y1="53.25" x2="11.409253125" y2="30.886759375" width="0" layer="19" extent="1-1"/>
+<wire x1="13.859253125" y1="74.956759375" x2="6.73" y2="53.25" width="0" layer="19" extent="1-1"/>
+<wire x1="53.25" y1="94.87" x2="13.859253125" y2="74.956759375" width="0" layer="19" extent="1-1"/>
+<wire x1="74.956759375" y1="87.74074375" x2="53.25" y2="94.87" width="0" layer="19" extent="1-1"/>
+<wire x1="90.19074375" y1="70.7132375" x2="74.956759375" y2="87.74074375" width="0" layer="19" extent="1-1"/>
+<wire x1="30.886759375" y1="90.19074375" x2="6.73" y2="53.25" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="LEDDIN">
 <contactref element="LED1" pad="4-DIN"/>
@@ -694,12 +699,12 @@ design rules under a new name.</description>
 <signal name="N$10">
 <contactref element="S1" pad="1"/>
 <contactref element="S2" pad="1"/>
-<wire x1="7.52" y1="-71.08" x2="55.84" y2="57.05" width="0" layer="19" extent="1-1"/>
+<wire x1="76.16" y1="57.05" x2="30.44" y2="57.05" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$11">
 <contactref element="U1" pad="D1"/>
 <contactref element="R1" pad="2"/>
-<wire x1="-4.23" y1="-59.69" x2="87.63" y2="67.31" width="0" layer="19" extent="1-1"/>
+<wire x1="71.97" y1="66.04" x2="62.23" y2="69.85" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 </board>

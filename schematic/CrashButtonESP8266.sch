@@ -1283,6 +1283,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND13" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="R1" library="SparkFun-Resistors" deviceset="470OHM" device="-0603-1/10W-1%" value="470"/>
 <part name="S2" library="SparkFun-Switches" deviceset="MOMENTARY-SWITCH-SPST" device="-PTH-12MM"/>
+<part name="LED12" library="adafruit" deviceset="WS2812B" device="5050"/>
+<part name="GND14" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
+<part name="SUPPLY13" library="SparkFun-PowerSymbols" deviceset="5V" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -1329,6 +1332,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="GND13" gate="1" x="142.24" y="43.18"/>
 <instance part="R1" gate="G$1" x="81.28" y="15.24"/>
 <instance part="S2" gate="G$1" x="38.1" y="22.86" rot="MR0"/>
+<instance part="LED12" gate="G$1" x="284.48" y="45.72"/>
+<instance part="GND14" gate="1" x="284.48" y="33.02"/>
+<instance part="SUPPLY13" gate="G$1" x="289.56" y="60.96"/>
 </instances>
 <busses>
 </busses>
@@ -1447,6 +1453,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="GND13" gate="1" pin="GND"/>
 <wire x1="129.54" y1="45.72" x2="142.24" y2="45.72" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="LED12" gate="G$1" pin="GND"/>
+<pinref part="GND14" gate="1" pin="GND"/>
+</segment>
 </net>
 <net name="5V" class="0">
 <segment>
@@ -1498,6 +1508,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="SUPPLY12" gate="G$1" pin="5V"/>
 <wire x1="129.54" y1="48.26" x2="134.62" y2="48.26" width="0.1524" layer="91"/>
 <wire x1="134.62" y1="48.26" x2="134.62" y2="50.8" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="LED12" gate="G$1" pin="VDD"/>
+<pinref part="SUPPLY13" gate="G$1" pin="5V"/>
 </segment>
 </net>
 <net name="LEDDIN" class="0">
