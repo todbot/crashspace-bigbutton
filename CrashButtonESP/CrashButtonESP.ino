@@ -1,8 +1,9 @@
 /**
-   CrashButtonESP
-
-
-*/
+ *  CrashButtonESP
+ *
+ *  Tod E. Kurt / http://todbot.com/
+ *
+ **/
 
 #include <Arduino.h>
 
@@ -20,10 +21,8 @@
 
 #define BRIGHTNESS 50
 
-const char* wifiSSID = "todbotss";
-const char* wifiPasswd = "";
-
-#define mins_max 5
+const char* wifiSSID = "todbot-back";
+const char* wifiPasswd = " ";
 
 const char* httpurl_stat   = "http://crashspacela.com/sign2/?output=jsonmin";
 const char* httpurl_press  = "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15&debug=1";
@@ -56,9 +55,7 @@ typedef enum LedModes {
 
 ButtonMode buttonMode = MODE_STARTUP;
 LedMode ledMode = MODE_OFF;
-//int buttonMode = MODE_UNKNOWN;
 
-//int ledMode = MODE_OFF;
 uint8_t ledHue = 0; // rotating "base color" used by many of the patterns
 int ledSpeed = 100;
 int ledCnt = NUM_LEDS;
@@ -80,10 +77,12 @@ bool doPress = false;
 
 //
 void setup()
-{
+{    
     Serial.begin(115200);
-    // Serial.setDebugOutput(true);
-    Serial.println();
+//    Serial.setDebugOutput(true);
+    Serial.println("\nCrashButtonESP\n");
+    Serial.println("WiFi config:");
+    WiFi.printDiag(Serial);
     
     pinMode( LED_BUILTIN, OUTPUT);
     digitalWrite( LED_BUILTIN, LOW); // on
@@ -105,7 +104,6 @@ void setup()
     }
     
     WiFiMulti.addAP(wifiSSID, wifiPasswd);
-
     
     digitalWrite( LED_BUILTIN, HIGH); // off
     Serial.println("[setup] done");
@@ -114,17 +112,23 @@ void setup()
 //
 void loop()
 {
-  buttonCheck();
+    buttonCheck();
 
-  // wait for WiFi connection
-  if ( (WiFiMulti.run() == WL_CONNECTED) ) {
-    fetchJson();
-  } else {
-    blinkBuiltIn( 2, 50);
-  }
-
+    // wait for WiFi connection
+    int rc = WiFiMulti.run();
+    if ( (rc == WL_CONNECTED) ) {
+        fetchJson();
+    } else {
+        buttonMode = MODE_ERROR;
+        Serial.print("WiFi not onnected: "); Serial.println(rc);
+        blinkBuiltIn( 2, 50);
+        delay(100);
+    }
+  
+    delay(50); // allow WiFi stack to run and rate-limit continuous button presses
 }
 
+// Convert app state to LED commands
 void buttonModeToLedMode() 
 {
     if( buttonMode == MODE_STARTUP ) { 
@@ -170,37 +174,32 @@ void ledUpdate()
 {
     buttonModeToLedMode();
     
-//  uint32_t now = millis();
-//  if ( (now - lastLedUpdateMillis) < ledUpdateMillis ) {
-//    return;
-//  }
-//  lastLedUpdateMillis = now;
-
-  if( ledMode == MODE_OFF ) {
-    fadeToBlackBy( leds, NUM_LEDS, 255);
-  }
-  else if( ledMode == MODE_SOLID ) {
-    fill_solid( leds, ledCnt, CHSV(ledHue, 255, 255) );
-  }
-  else if( ledMode == MODE_PRESET ) {
-    // do nothing
-  }
-  else if( ledMode == MODE_SECTOR ) {
-    fill_solid( leds, NUM_LEDS, 0 );
-    fill_solid( leds, ledCnt, CHSV(ledHue, 255, 255) );
-  }
-  else if( ledMode == MODE_BREATHE ) {
-    int breathe = beatsin8( ledSpeed, ledRangeL, ledRangeH);
-    fill_solid( leds, NUM_LEDS, 0 );
-    fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
-  }
-  else if ( ledMode == MODE_SINELON ) {
-    // a colored dot sweeping back and forth, with fading trails
-    fadeToBlackBy( leds, NUM_LEDS, 10);
-    int pos = beatsin16(13, 0, NUM_LEDS);
-    leds[pos] += CHSV( ledHue, 255, 255);
-  }
-  FastLED.show();
+    if( ledMode == MODE_OFF ) {
+        fadeToBlackBy( leds, NUM_LEDS, 255);
+    }
+    else if( ledMode == MODE_SOLID ) {
+        fill_solid( leds, ledCnt, CHSV(ledHue, 255, 255) );
+    }
+    else if( ledMode == MODE_SECTOR ) {
+        fill_solid( leds, NUM_LEDS, 0 );
+        fill_solid( leds, ledCnt, CHSV(ledHue, 255, 255) );
+    }
+    else if( ledMode == MODE_BREATHE ) {
+        int breathe = beatsin8( ledSpeed, ledRangeL, ledRangeH);
+        fill_solid( leds, NUM_LEDS, 0 );
+        fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
+    }
+    else if ( ledMode == MODE_SINELON ) {
+        // a colored dot sweeping back and forth, with fading trails
+        fadeToBlackBy( leds, NUM_LEDS, 10);
+        int pos = beatsin16(13, 0, NUM_LEDS);
+        leds[pos] += CHSV( ledHue, 255, 255);
+    }
+    else if( ledMode == MODE_PRESET ) {
+        // do nothing
+    }
+    
+    FastLED.show();
 }
 
 
@@ -227,81 +226,81 @@ void buttonCheck()
 //
 void fetchJson()
 {
-  uint32_t now = millis();
-  if ( (now - lastFetchMillis) < fetchMillis ) {
-    return;
-  }
-  lastFetchMillis = now;
-
-  uint32_t freesize = ESP.getFreeHeap();
-  uint32_t chipId = ESP.getChipId();
-
-  digitalWrite(LED_BUILTIN, LOW);
-  Serial.print("[http] begin...");
-  Serial.print( chipId ); Serial.print(": ");
-  Serial.println( freesize );
-
-  HTTPClient http;
-
-  //http.begin(httpsurl, httpsfingerprint);   // configure traged server and url
-  const char* httpurl = (doPress) ? httpurl_press : httpurl_stat;
-  http.begin(httpurl);
-
-  Serial.print("[http] GET...\n");
-  // start connection and send HTTP header
-  int httpCode = http.GET();
-
-  // httpCode will be negative on error
-  if (httpCode > 0) {
-    // HTTP header has been sent and Server response header has been handled
-    Serial.print("[http] GET... code: "); Serial.println(httpCode);
-
-    // file found at server
-    if ( httpCode == HTTP_CODE_OK ) {
-      String payload = http.getString();
-      handleJson( payload );
+    uint32_t now = millis();
+    if ( (now - lastFetchMillis) < fetchMillis ) {
+        return;
     }
-  } else {
-    Serial.printf("[http] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
-  }
+    lastFetchMillis = now;
 
-  http.end();
+    uint32_t freesize = ESP.getFreeHeap();
+    uint32_t chipId = ESP.getChipId();
 
-  digitalWrite(LED_BUILTIN, HIGH); // off
-  doPress = false;
+    digitalWrite(LED_BUILTIN, LOW);
+    Serial.print("[http] begin...");
+    Serial.print( chipId ); Serial.print(": ");
+    Serial.println( freesize );
+
+    HTTPClient http;
+
+    //http.begin(httpsurl, httpsfingerprint);   // configure traged server and url
+    const char* httpurl = (doPress) ? httpurl_press : httpurl_stat;
+    http.begin(httpurl);
+
+    Serial.print("[http] GET...\n");
+    // start connection and send HTTP header
+    int httpCode = http.GET();
+
+    // httpCode will be negative on error
+    if (httpCode > 0) {
+        // HTTP header has been sent and Server response header has been handled
+        Serial.print("[http] GET... code: "); Serial.println(httpCode);
+
+        // file found at server
+        if ( httpCode == HTTP_CODE_OK ) {
+            String payload = http.getString();
+            handleJson( payload );
+        }
+    } else {
+        Serial.printf("[http] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    }
+
+    http.end();
+
+    digitalWrite(LED_BUILTIN, HIGH); // off
+    doPress = false;
   
-  delay(100); // FIXME: why is this here?
+    delay(100); // FIXME: why is this here?
 }
 
 //
 bool handleJson(String jsonstr)
 {
-  Serial.println(jsonstr);
+    Serial.println(jsonstr);
 
-  StaticJsonBuffer<200> jsonBuffer;
-  JsonObject& root = jsonBuffer.parseObject(jsonstr);
-  // Test if parsing succeeds.
-  if (!root.success()) {
-    Serial.println("parseObject() failed");
-    // FIXME: add error handling
-    return false;
-  }
+    StaticJsonBuffer<200> jsonBuffer;
+    JsonObject& root = jsonBuffer.parseObject(jsonstr);
+    // Test if parsing succeeds.
+    if (!root.success()) {
+        Serial.println("parseObject() failed");
+        // FIXME: add error handling
+        return false;
+    }
 
-  bool is_open = root["is_open"];
-  double minutes_left = root["minutes_left"];
+    bool is_open = root["is_open"];
+    double minutes_left = root["minutes_left"];
 
-  Serial.printf("is_open:%d", is_open); // NOTE: the below fails for -0.99 to -0.01
-  Serial.printf(", minutes_left: %d.%d\n", (int)minutes_left, getDecimal(minutes_left));
+    Serial.printf("is_open:%d", is_open); // NOTE: the below fails for -0.99 to -0.01
+    Serial.printf(", minutes_left: %d.%d\n", (int)minutes_left, getDecimal(minutes_left));
 
-  if ( minutes_left > 0 ) {
-    minutes_left = (minutes_left > 60) ? 60 : minutes_left;
-    ledCnt =  1 + NUM_LEDS * minutes_left / 60;
-    Serial.print("ledCnt:"); Serial.println(ledCnt);
-    buttonMode = MODE_OPEN;
-  }
-  else {
-    buttonMode = MODE_CLOSED;
-  }
+    if ( minutes_left > 0 ) {
+        minutes_left = (minutes_left > 60) ? 60 : minutes_left;
+        ledCnt =  1 + NUM_LEDS * minutes_left / 60;
+        Serial.print("ledCnt:"); Serial.println(ledCnt);
+        buttonMode = MODE_OPEN;
+    }
+    else {
+        buttonMode = MODE_CLOSED;
+    }
 
 }
 
