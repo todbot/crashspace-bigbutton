@@ -19,7 +19,7 @@
 
 #include <ArduinoJson.h>
 
-#define NUM_LEDS 12
+#define NUM_LEDS 13  // first one is "sacrificial" neopixel acting as level converter
 #define LEDPIN D4  // (pin D4 on NodeMCU board)
 //#define LEDPIN D1  // (pin D1 on NodeMCU board)
 #define BUTTONPIN D2
@@ -29,10 +29,18 @@
 const char* wifiSSID = "todbot";
 const char* wifiPasswd = " ";
 
-const char* httpurl_stat   = "http://crashspacela.com/sign2/?output=jsonmin";
-const char* httpurl_press  = "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15&debug=1";
-const char* httpsurl = "https://crashspacela.com/sign2/?output=jsonmin";
-const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
+#define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
+#define BUTTON_ID "espbutton1"
+#define BUTTON_MSG "hi+tod"
+#define BUTTON_MINS "15"
+#define BUTTON_DEBUG "" //"&debug=1"
+// we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15&debug=1";
+
+const char* httpurl_stat  = BUTTON_BASEURL;  
+const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "&diff_mins_max=" BUTTON_MINS BUTTON_DEBUG;
+
+//const char* httpsurl = "https://crashspacela.com/sign2/?output=jsonmin";
+//const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
 // SSL Certificate finngerprint for the host
 
 Ticker ledticker;
@@ -169,9 +177,10 @@ void buttonModeToLedMode()
     else if( buttonMode == MODE_ERROR ) {
         ledMode = MODE_BREATHE;
         ledHue = 0;
+        ledCnt = NUM_LEDS;
         ledSpeed = 120;
         ledRangeL = 0;
-        ledRangeH = 255;        
+        ledRangeH = 155;
     }
 }
 
@@ -264,7 +273,7 @@ void fetchJson()
     const char* httpurl = (doPress) ? httpurl_press : httpurl_stat;
     http.begin(httpurl);
 
-    Serial.print("[http] GET...\n");
+    Serial.print("[http] GET "); Serial.println(httpurl);
     // start connection and send HTTP header
     int httpCode = http.GET();
 
@@ -280,6 +289,7 @@ void fetchJson()
         }
     } else {
         Serial.printf("[http] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+        buttonMode = MODE_ERROR;
     }
 
     http.end();
@@ -347,12 +357,12 @@ void blinkBuiltIn( int times, int msecs )
   static const uint8_t D1   = 5;
   static const uint8_t D2   = 4;
   static const uint8_t D3   = 0;
-  static const uint8_t D4   = 2;
+  static const uint8_t D4   = 2;  NeoEsp8266Uart800KbpsMethod
   static const uint8_t D5   = 14;
   static const uint8_t D6   = 12;
   static const uint8_t D7   = 13;
   static const uint8_t D8   = 15;
-  static const uint8_t D9   = 3;
+  static const uint8_t D9   = 3;  NeoEsp8266Dma800KbpsMethod  // default, also UART RX
   static const uint8_t D10  = 1;
 
 
