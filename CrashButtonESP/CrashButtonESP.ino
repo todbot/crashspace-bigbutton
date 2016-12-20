@@ -7,23 +7,26 @@
 
 #include <Arduino.h>
 
+
 #include <ESP8266WiFi.h>
+// this define does not appear to work
+#define DEBUG_WIFI_MULTI Serial.printf  
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
 #include <Ticker.h>
-
 #define FASTLED_ALLOW_INTERRUPTS 0
 #include <FastLED.h>
 
 #include <ArduinoJson.h>
 
-#define NUM_LEDS 25
-#define LEDPIN D1  // (pin D1 on NodeMCU board)
+#define NUM_LEDS 12
+#define LEDPIN D4  // (pin D4 on NodeMCU board)
+//#define LEDPIN D1  // (pin D1 on NodeMCU board)
 #define BUTTONPIN D2
 
-#define BRIGHTNESS 50
+#define BRIGHTNESS 150
 
-const char* wifiSSID = "todbot-back";
+const char* wifiSSID = "todbot";
 const char* wifiPasswd = " ";
 
 const char* httpurl_stat   = "http://crashspacela.com/sign2/?output=jsonmin";
@@ -66,7 +69,7 @@ int ledRangeH = 255;
 
 CRGB leds[NUM_LEDS];
 
-const int fetchMillis = 5000;
+const int fetchMillis = 3000;
 uint32_t lastFetchMillis = 0;
 
 const uint32_t buttonMillis = 60 * 1000; // millisecs between valid presses
@@ -79,10 +82,12 @@ bool doPress = false;
 
 //
 void setup()
-{    
+{
+    delay(1500);    
     Serial.begin(115200);
 //    Serial.setDebugOutput(true);
-    Serial.println("\nCrashButtonESP\n");
+    Serial.println("\nCrashButtonESPa\n");
+    WiFi.setAutoConnect( false );
     Serial.println("WiFi config:");
     WiFi.printDiag(Serial);
     
@@ -114,15 +119,14 @@ void setup()
 //
 void loop()
 {
-    buttonCheck();
-
     // wait for WiFi connection
     int rc = WiFiMulti.run();
     if ( (rc == WL_CONNECTED) ) {
         fetchJson();
     } else {
         buttonMode = MODE_ERROR;
-        Serial.print("WiFi not onnected: "); Serial.println(rc);
+        Serial.print("WiFi not connected: "); Serial.println(rc);
+        WiFi.printDiag(Serial);
         blinkBuiltIn( 2, 50);
         delay(100);
     }
@@ -174,6 +178,8 @@ void buttonModeToLedMode()
 // called periodically from Ticker
 void ledUpdate()
 {
+    buttonCheck();
+    
     buttonModeToLedMode();
     
     if( ledMode == MODE_OFF ) {
@@ -219,13 +225,13 @@ void buttonCheck()
     if ( b == HIGH  ) { // not pressed
         return;
     }
-    Serial.println("PRESS");
+    //Serial.println("PRESS");
 
     buttonMode = MODE_PRESSED;
 
     uint32_t now = millis();   
     if ( (now < buttonMillis) || ((now - lastButtonTime) > buttonMillis) ) {
-        Serial.println("PRESS for reals");
+        //Serial.println("PRESS for reals");
         lastButtonTime = millis();
         doPress = true;
         lastFetchMillis -= fetchMillis; // signal: do fetch now
@@ -246,10 +252,11 @@ void fetchJson()
     uint32_t chipId = ESP.getChipId();
 
     digitalWrite(LED_BUILTIN, LOW);
-    Serial.print("[http] begin...");
-    Serial.print( chipId ); Serial.print(": ");
-    Serial.print( freesize );
-    Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
+    
+    Serial.print("[http] begin @"); Serial.print(millis());
+    Serial.print(" id:"); Serial.print( chipId, HEX ); 
+    Serial.print(" freesize:"); Serial.print( freesize );
+    Serial.printf(" SSID:%s RSSI:%d dBm\n", WiFi.SSID().c_str(), WiFi.RSSI());
 
     HTTPClient http;
 
@@ -300,13 +307,13 @@ bool handleJson(String jsonstr)
     bool is_open = root["is_open"];
     double minutes_left = root["minutes_left"];
 
-    Serial.printf("is_open:%d", is_open); // NOTE: the below fails for -0.99 to -0.01
-    Serial.printf(", minutes_left: %d.%d\n", (int)minutes_left, getDecimal(minutes_left));
+//    Serial.printf("is_open:%d", is_open); // NOTE: the below fails for -0.99 to -0.01
+//    Serial.printf(", minutes_left: %d.%d\n", (int)minutes_left, getDecimal(minutes_left));
 
     if ( minutes_left > 0 ) {
         minutes_left = (minutes_left > 60) ? 60 : minutes_left;
         ledCnt =  1 + NUM_LEDS * minutes_left / 60;
-        Serial.print("ledCnt:"); Serial.println(ledCnt);
+//        Serial.print("ledCnt:"); Serial.println(ledCnt);
         buttonMode = MODE_OPEN;
     }
     else {
