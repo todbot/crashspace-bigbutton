@@ -7,22 +7,23 @@
 
 #include <Arduino.h>
 
-
 #include <ESP8266WiFi.h>
-// this define does not appear to work
-#define DEBUG_WIFI_MULTI Serial.printf  
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
 #include <Ticker.h>
-#define FASTLED_ALLOW_INTERRUPTS 0
+
+//#define FASTLED_ALLOW_INTERRUPTS 0
 #include <FastLED.h>
+FASTLED_USING_NAMESPACE
 
 #include <ArduinoJson.h>
 
-#define NUM_LEDS 13  // first one is "sacrificial" neopixel acting as level converter
-#define LEDPIN D4  // (pin D4 on NodeMCU board)
+#define NUM_LEDS 17  // first one is "sacrificial" neopixel acting as level converter
+//#define NUM_LEDS 13  // first one is "sacrificial" neopixel acting as level converter
+//#define LEDPIN D4  // (pin D4 on NodeMCU board)
+#define LEDPIN 4  // (pin D4 on NodeMCU board) (FastLED does not like 'D4')
 //#define LEDPIN D1  // (pin D1 on NodeMCU board)
-#define BUTTONPIN D2
+#define BUTTONPIN D1
 
 #define BRIGHTNESS 150
 
@@ -30,10 +31,10 @@ const char* wifiSSID = "todbot";
 const char* wifiPasswd = " ";
 
 #define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
-#define BUTTON_ID "espbutton1"
-#define BUTTON_MSG "hi+tod"
-#define BUTTON_MINS "15"
-#define BUTTON_DEBUG "" //"&debug=1"
+#define BUTTON_ID      "espbutton1"
+#define BUTTON_MSG     "hi+tod"
+#define BUTTON_MINS    "30"
+#define BUTTON_DEBUG   "&debug=1"
 // we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15&debug=1";
 
 const char* httpurl_stat  = BUTTON_BASEURL;  
@@ -85,7 +86,6 @@ uint32_t lastButtonTime;
 
 const uint8_t ledUpdateMillis = 50;
 
-
 bool doPress = false;
 
 //
@@ -108,8 +108,6 @@ void setup()
     fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
     FastLED.show();
     
-    ledticker.attach_ms( ledUpdateMillis, ledUpdate );
-    
     for (uint8_t t = 4; t > 0; t--) {
         Serial.printf("[setupa] waiting %d...\n", t);
         Serial.flush();
@@ -122,6 +120,9 @@ void setup()
     
     digitalWrite( LED_BUILTIN, HIGH); // off
     Serial.println("[setup] done");
+    
+    ledticker.attach_ms( ledUpdateMillis, ledUpdate );
+    
 }
 
 //
@@ -138,8 +139,11 @@ void loop()
         blinkBuiltIn( 2, 50);
         delay(100);
     }
-  
-    delay(50); // allow WiFi stack to run and rate-limit continuous button presses
+
+    if( doPress ) { Serial.println("PRESS"); }
+//    if( doLedShow ) { FastLED.show(); doLedShow = false; } 
+    
+    //delay(50); // allow WiFi stack to run and rate-limit continuous button presses
 }
 
 // Convert app state to LED commands
@@ -210,8 +214,8 @@ void ledUpdate()
         int breathe = beatsin8( ledSpeed, ledRangeL, ledRangeH);        
         fill_solid( leds, NUM_LEDS, 0 );
         fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
-        if( ledCnt > 0 ) { 
-            leds[ledCnt-1] = CHSV(ledHue, 120, breathe); //CRGB(breathe,breathe,breathe);
+        if( ledCnt < NUM_LEDS ) { 
+            leds[ledCnt] = CHSV(ledHue, 120, breathe); //CRGB(breathe,breathe,breathe);
         }
     }
     else if ( ledMode == MODE_SINELON ) {
@@ -223,7 +227,7 @@ void ledUpdate()
     else if( ledMode == MODE_PRESET ) {
         // do nothing
     }
-    
+
     FastLED.show();
 }
 
@@ -240,6 +244,7 @@ void buttonCheck()
 
     uint32_t now = millis();   
     if ( (now < buttonMillis) || ((now - lastButtonTime) > buttonMillis) ) {
+//    if ( (now - lastButtonTime) > buttonMillis) ) {
         //Serial.println("PRESS for reals");
         lastButtonTime = millis();
         doPress = true;
@@ -322,7 +327,7 @@ bool handleJson(String jsonstr)
 
     if ( minutes_left > 0 ) {
         minutes_left = (minutes_left > 60) ? 60 : minutes_left;
-        ledCnt =  1 + NUM_LEDS * minutes_left / 60;
+        ledCnt =   NUM_LEDS * minutes_left / 60;  // ranges from 0 - NUM_LEDS
 //        Serial.print("ledCnt:"); Serial.println(ledCnt);
         buttonMode = MODE_OPEN;
     }
