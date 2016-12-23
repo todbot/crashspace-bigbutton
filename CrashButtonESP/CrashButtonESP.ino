@@ -91,11 +91,13 @@ bool doPress = false;
 //
 void setup()
 {
-    delay(1500);    
     Serial.begin(115200);
 //    Serial.setDebugOutput(true);
-    Serial.println("\nCrashButtonESPa\n");
-    WiFi.setAutoConnect( false );
+    WiFi.disconnect(true);   // delete old config
+//    WiFi.setAutoConnect( false );
+ 
+    Serial.println("\nCrashButtonESP: " BUTTON_ID );
+    delay(1500);    
     Serial.println("WiFi config:");
     WiFi.printDiag(Serial);
     
@@ -270,7 +272,7 @@ void fetchJson()
     Serial.print("[http] begin @"); Serial.print(millis());
     Serial.print(" id:"); Serial.print( chipId, HEX ); 
     Serial.print(" freesize:"); Serial.print( freesize );
-    Serial.printf(" SSID:%s RSSI:%d dBm\n", WiFi.SSID().c_str(), WiFi.RSSI());
+    Serial.printf(" IP:%s SSID:%s RSSI:%d dBm\n", WiFi.localIP().toString().c_str(), WiFi.SSID().c_str(), WiFi.RSSI());
 
     HTTPClient http;
 
