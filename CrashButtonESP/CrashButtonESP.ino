@@ -27,8 +27,8 @@ FASTLED_USING_NAMESPACE
 
 #define BRIGHTNESS 150
 
-const char* wifiSSID = "todbot";
-const char* wifiPasswd = " ";
+const char* wifiSSID = "RogerNet";
+const char* wifiPasswd = "cuddlycaroline";
 
 #define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
 #define BUTTON_ID      "espbutton1"
