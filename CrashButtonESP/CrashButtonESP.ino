@@ -13,6 +13,7 @@
 #include <Ticker.h>
 
 //#define FASTLED_ALLOW_INTERRUPTS 0
+#define FASTLED_ESP8266_RAW_PIN_ORDER
 #include <FastLED.h>
 FASTLED_USING_NAMESPACE
 
@@ -20,15 +21,20 @@ FASTLED_USING_NAMESPACE
 
 #define NUM_LEDS 17  // first one is "sacrificial" neopixel acting as level converter
 //#define NUM_LEDS 13  // first one is "sacrificial" neopixel acting as level converter
-//#define LEDPIN D4  // (pin D4 on NodeMCU board)
-#define LEDPIN 4  // (pin D4 on NodeMCU board) (FastLED does not like 'D4')
-//#define LEDPIN D1  // (pin D1 on NodeMCU board)
+#define LEDPIN D4    // (GPIO2, pin D4 on Mini D1 board) 
 #define BUTTONPIN D1
+
+// Confusing NodeMCU vs Mini D1 board notation notes:
+// On both NodeMCU and D1 Mini boards, pin "D4" is GPIO2.
+// FastLED tries to help out NodeMCU users by mapping Dx numbers to GPIO numbers
+//  (e.g. '4' means NodeMCU D4 pin not GPIO 4 when NodeMCU board is selected)
+// However, when WeMos D1 Mini board is selected, FastLED pin number is GPIO number (e.g. '2' means GPIO2 not D2)
+
 
 #define BRIGHTNESS 150
 
-const char* wifiSSID = "RogerNet";
-const char* wifiPasswd = "cuddlycaroline";
+const char* wifiSSID = "todbot-back";
+const char* wifiPasswd = " ";
 
 #define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
 #define BUTTON_ID      "espbutton1"
@@ -64,7 +70,8 @@ typedef enum LedModes {
     MODE_SINELON,
     MODE_BREATHE,
     MODE_SECTOR,
-    MODE_SECTORBREATHE
+    MODE_SECTORBREATHE,
+    MODE_RAINBOW
 } LedMode;
 
 ButtonMode buttonMode = MODE_STARTUP;
@@ -100,10 +107,10 @@ void setup()
     delay(1500);    
     Serial.println("WiFi config:");
     WiFi.printDiag(Serial);
-    
-    pinMode( LED_BUILTIN, OUTPUT);
-    digitalWrite( LED_BUILTIN, LOW); // on
+
     pinMode( BUTTONPIN, INPUT_PULLUP);
+//    pinMode( LED_BUILTIN, OUTPUT);
+//    digitalWrite( LED_BUILTIN, LOW); // on
     
     FastLED.addLeds<WS2812, LEDPIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
@@ -113,14 +120,14 @@ void setup()
     for (uint8_t t = 4; t > 0; t--) {
         Serial.printf("[setupa] waiting %d...\n", t);
         Serial.flush();
-        blinkBuiltIn( 1, 100);
+//        blinkBuiltIn( 1, 100);
         ledCnt = ledCnt - (ledCnt / 3);
         delay(800);
     }
     
     WiFiMulti.addAP(wifiSSID, wifiPasswd);
     
-    digitalWrite( LED_BUILTIN, HIGH); // off
+//    digitalWrite( LED_BUILTIN, HIGH); // off
     Serial.println("[setup] done");
     
     ledticker.attach_ms( ledUpdateMillis, ledUpdate );
@@ -138,7 +145,7 @@ void loop()
         buttonMode = MODE_ERROR;
         Serial.print("WiFi not connected: "); Serial.println(rc);
         WiFi.printDiag(Serial);
-        blinkBuiltIn( 2, 50);
+//        blinkBuiltIn( 2, 50);
         delay(100);
     }
 
@@ -168,8 +175,10 @@ void buttonModeToLedMode()
         ledRangeH = 255;        
     }
     else if( buttonMode == MODE_PRESSED ) { 
-        ledMode = MODE_SOLID; // fixme
-        ledHue = 128; // cyan
+//        ledMode = MODE_SOLID; // fixme
+//        ledHue = 128; // cyan
+//        ledCnt = NUM_LEDS;
+        ledMode = MODE_RAINBOW;
         ledCnt = NUM_LEDS;
     }
     else if( buttonMode == MODE_OPEN ) {
@@ -185,8 +194,8 @@ void buttonModeToLedMode()
         ledHue = 0;
         ledCnt = NUM_LEDS;
         ledSpeed = 120;
-        ledRangeL = 0;
-        ledRangeH = 155;
+        ledRangeL = 0;   // brightness low
+        ledRangeH = 100; // brightness high
     }
 }
 
@@ -225,6 +234,9 @@ void ledUpdate()
         fadeToBlackBy( leds, NUM_LEDS, 10);
         int pos = beatsin16(13, 0, NUM_LEDS);
         leds[pos] += CHSV( ledHue, 255, 255);
+    }
+    else if( ledMode == MODE_RAINBOW ) { 
+        fill_rainbow( leds, ledCnt, millis()/5, 255 / ledCnt );
     }
     else if( ledMode == MODE_PRESET ) {
         // do nothing
@@ -267,12 +279,12 @@ void fetchJson()
     uint32_t freesize = ESP.getFreeHeap();
     uint32_t chipId = ESP.getChipId();
 
-    digitalWrite(LED_BUILTIN, LOW);
+//    digitalWrite(LED_BUILTIN, LOW);
     
     Serial.print("[http] begin @"); Serial.print(millis());
     Serial.print(" id:"); Serial.print( chipId, HEX ); 
     Serial.print(" freesize:"); Serial.print( freesize );
-    Serial.printf(" IP:%s SSID:%s RSSI:%d dBm\n", WiFi.localIP().toString().c_str(), WiFi.SSID().c_str(), WiFi.RSSI());
+    Serial.printf(" IP:%s SSID:%s RSSI:%d dBm\r\n", WiFi.localIP().toString().c_str(), WiFi.SSID().c_str(), WiFi.RSSI());
 
     HTTPClient http;
 
@@ -292,16 +304,17 @@ void fetchJson()
         // file found at server
         if ( httpCode == HTTP_CODE_OK ) {
             String payload = http.getString();
-            handleJson( payload );
+            handleJson( payload );              // FIXME: check return value
         }
-    } else {
-        Serial.printf("[http] GET... failed, error: %s\n", http.errorToString(httpCode).c_str());
+    }
+    else {
+        Serial.printf("[http] GET... failed, error: \n%s\n", http.errorToString(httpCode).c_str());
         buttonMode = MODE_ERROR;
     }
 
     http.end();
 
-    digitalWrite(LED_BUILTIN, HIGH); // off
+//    digitalWrite(LED_BUILTIN, HIGH); // off
     doPress = false;
   
     delay(100); // FIXME: why is this here?
@@ -345,7 +358,7 @@ int getDecimal(float val)
   return abs((int)((val - (int)val) * 100.0));
 }
 
-//
+
 void blinkBuiltIn( int times, int msecs )
 {
   for ( int i = 0; i < times; i++) {
