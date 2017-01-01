@@ -19,17 +19,11 @@ FASTLED_USING_NAMESPACE
 
 #include <ArduinoJson.h>
 
-#define NUM_LEDS 17  // first one is "sacrificial" neopixel acting as level converter
-//#define NUM_LEDS 13  // first one is "sacrificial" neopixel acting as level converter
+
+#define NUM_LEDS (1 + 16) // note: first one is "sacrificial" neopixel acting as level converter
+//#define NUM_LEDS 12  // note: first one is "sacrificial" neopixel acting as level converter
 #define LEDPIN D4    // (GPIO2, pin D4 on Mini D1 board) 
 #define BUTTONPIN D1
-
-// Confusing NodeMCU vs Mini D1 board notation notes:
-// On both NodeMCU and D1 Mini boards, pin "D4" is GPIO2.
-// FastLED tries to help out NodeMCU users by mapping Dx numbers to GPIO numbers
-//  (e.g. '4' means NodeMCU D4 pin not GPIO 4 when NodeMCU board is selected)
-// However, when WeMos D1 Mini board is selected, FastLED pin number is GPIO number (e.g. '2' means GPIO2 not D2)
-
 
 #define BRIGHTNESS 150
 
@@ -50,9 +44,6 @@ const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "
 //const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
 // SSL Certificate finngerprint for the host
 
-Ticker ledticker;
-
-ESP8266WiFiMulti WiFiMulti;
 
 typedef enum ButtonModes {
     MODE_UNKNOWN = 0,
@@ -77,6 +68,25 @@ typedef enum LedModes {
 ButtonMode buttonMode = MODE_STARTUP;
 LedMode ledMode = MODE_OFF;
 
+Ticker ledticker;
+ESP8266WiFiMulti WiFiMulti;
+
+
+const int fetchMillis = 3* 1000;  // how often API URL is checked
+uint32_t lastFetchMillis = 0;
+
+const uint32_t buttonMillis = 60 * 1000; // min time between valid presses
+uint32_t lastButtonTime;
+
+const uint8_t ledUpdateMillis = 50; // how often LEDs are updated
+
+int badCount;
+int maxBadCount = 5;    // how many bad events to become an error light
+const uint32_t badMillis = 10 * 1000; // how long until badness becomes an error
+uint32_t lastBadMillis = 0;
+
+bool doPress = false; // was button pressed? (causes submit to API server)
+
 uint8_t ledHue = 0; // rotating "base color" used by many of the patterns
 int ledSpeed = 100;
 int ledCnt = NUM_LEDS;
@@ -84,16 +94,6 @@ int ledRangeL = 0;
 int ledRangeH = 255;
 
 CRGB leds[NUM_LEDS];
-
-const int fetchMillis = 3000;
-uint32_t lastFetchMillis = 0;
-
-const uint32_t buttonMillis = 60 * 1000; // millisecs between valid presses
-uint32_t lastButtonTime;
-
-const uint8_t ledUpdateMillis = 50;
-
-bool doPress = false;
 
 //
 void setup()
@@ -109,8 +109,6 @@ void setup()
     WiFi.printDiag(Serial);
 
     pinMode( BUTTONPIN, INPUT_PULLUP);
-//    pinMode( LED_BUILTIN, OUTPUT);
-//    digitalWrite( LED_BUILTIN, LOW); // on
     
     FastLED.addLeds<WS2812, LEDPIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness(BRIGHTNESS);
@@ -120,14 +118,12 @@ void setup()
     for (uint8_t t = 4; t > 0; t--) {
         Serial.printf("[setupa] waiting %d...\n", t);
         Serial.flush();
-//        blinkBuiltIn( 1, 100);
-        ledCnt = ledCnt - (ledCnt / 3);
+        ledCnt = ledCnt - (ledCnt / 3);  // countdown light for fun
         delay(800);
     }
     
     WiFiMulti.addAP(wifiSSID, wifiPasswd);
     
-//    digitalWrite( LED_BUILTIN, HIGH); // off
     Serial.println("[setup] done");
     
     ledticker.attach_ms( ledUpdateMillis, ledUpdate );
@@ -142,11 +138,12 @@ void loop()
     if ( (rc == WL_CONNECTED) ) {
         fetchJson();
     } else {
-        buttonMode = MODE_ERROR;
+        //buttonMode = MODE_ERROR;
+        badCount++;
         Serial.print("WiFi not connected: "); Serial.println(rc);
         WiFi.printDiag(Serial);
-//        blinkBuiltIn( 2, 50);
-        delay(100);
+        //blinkBuiltIn( 2, 50);
+        delay(1000); // delay still services background tasks for WiFi connect
     }
 
     if( doPress ) { Serial.println("PRESS"); }
@@ -205,6 +202,8 @@ void ledUpdate()
     buttonCheck();
     
     buttonModeToLedMode();
+
+    errorDetect();
     
     if( ledMode == MODE_OFF ) {
         fadeToBlackBy( leds, NUM_LEDS, 255);
@@ -245,7 +244,7 @@ void ledUpdate()
     FastLED.show();
 }
 
-
+// check our button
 void buttonCheck()
 {
     int b = digitalRead( BUTTONPIN );
@@ -257,8 +256,8 @@ void buttonCheck()
     buttonMode = MODE_PRESSED;
 
     uint32_t now = millis();   
-    if ( (now < buttonMillis) || ((now - lastButtonTime) > buttonMillis) ) {
-//    if ( (now - lastButtonTime) > buttonMillis) ) {
+//    if ( (now < buttonMillis) && ((now - lastButtonTime) > buttonMillis) ) {
+    if ( (now - lastButtonTime) > buttonMillis ) {
         //Serial.println("PRESS for reals");
         lastButtonTime = millis();
         doPress = true;
@@ -271,15 +270,13 @@ void buttonCheck()
 void fetchJson()
 {
     uint32_t now = millis();
-    if ( (now - lastFetchMillis) < fetchMillis ) {
+    if ( (now - lastFetchMillis) < fetchMillis ) {  // too soon
         return;
     }
     lastFetchMillis = now;
 
     uint32_t freesize = ESP.getFreeHeap();
     uint32_t chipId = ESP.getChipId();
-
-//    digitalWrite(LED_BUILTIN, LOW);
     
     Serial.print("[http] begin @"); Serial.print(millis());
     Serial.print(" id:"); Serial.print( chipId, HEX ); 
@@ -304,18 +301,22 @@ void fetchJson()
         // file found at server
         if ( httpCode == HTTP_CODE_OK ) {
             String payload = http.getString();
-            handleJson( payload );              // FIXME: check return value
+            bool goodresponse = handleJson( payload );
+            if( !goodresponse ) {  badCount++;   }
+        }
+        else { 
+            badCount++;
         }
     }
     else {
         Serial.printf("[http] GET... failed, error: \n%s\n", http.errorToString(httpCode).c_str());
-        buttonMode = MODE_ERROR;
+        // buttonMode = MODE_ERROR;
+        badCount++;
     }
 
     http.end();
 
-//    digitalWrite(LED_BUILTIN, HIGH); // off
-    doPress = false;
+    doPress = false;  // say we handled the button press
   
     delay(100); // FIXME: why is this here?
 }
@@ -331,6 +332,7 @@ bool handleJson(String jsonstr)
     if (!root.success()) {
         Serial.println("parseObject() failed");
         // FIXME: add error handling
+        badCount++;
         return false;
     }
 
@@ -352,25 +354,34 @@ bool handleJson(String jsonstr)
 
 }
 
-// no float support in printf, so here's this
-int getDecimal(float val)
+// accumulate badness, if too much, trigger error
+void errorDetect()
 {
-  return abs((int)((val - (int)val) * 100.0));
+    uint32_t now = millis();   
+    if ( (now - lastBadMillis) < badMillis ) {  // too soon
+        return;
+    }
+    lastBadMillis = now;
+    
+    Serial.printf("errorDetect: badCount:%d\n", badCount);
+    
+    if( badCount > maxBadCount ) { 
+        buttonMode = MODE_ERROR;  // signal error
+    }
+    
+    // decay badcount
+    if( badCount > 0 ) { badCount--; }
 }
 
 
-void blinkBuiltIn( int times, int msecs )
-{
-  for ( int i = 0; i < times; i++) {
-    digitalWrite( LED_BUILTIN, LOW); // on
-    delay(msecs);
-    digitalWrite( LED_BUILTIN, HIGH); //off
-    delay(msecs);
-  }
-}
+// Confusing NodeMCU vs Mini D1 board notation aside:
+// On both NodeMCU and D1 Mini boards, pin "D4" is GPIO2.
+// FastLED tries to help out NodeMCU users by mapping Dx numbers to GPIO numbers
+//  (e.g. '4' means NodeMCU D4 pin not GPIO 4 when NodeMCU board is selected)
+// However, when WeMos D1 Mini board is selected, FastLED pin number is GPIO number (e.g. '2' means GPIO2 not D2)
 
 /*
-   NodeMCU has weird pin mapping.
+  NodeMCU has weird pin mapping.
   Pin numbers written on the board itself do not correspond to ESP8266 GPIO pin numbers. We have constants defined to make using this board easier:
 
   static const uint8_t D0   = 16;
