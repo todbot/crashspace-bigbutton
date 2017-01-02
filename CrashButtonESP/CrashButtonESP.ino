@@ -286,17 +286,21 @@ void fetchJson()
     HTTPClient http;
 
     //http.begin(httpsurl, httpsfingerprint);   // configure traged server and url
-    const char* httpurl = (doPress) ? httpurl_press : httpurl_stat;
+    const char* httpurlbase = (doPress) ? httpurl_press : httpurl_stat;
+    
+    String httpUrl = String(httpurlbase) + "&chipId=" + String(chipId,HEX) + "&secs="+ (millis()/1000) + "&bc="+ badCount;
+    const char* httpurl = httpUrl.c_str();
+    
     http.begin(httpurl);
 
-    Serial.print("[http] GET "); Serial.println(httpurl);
+    Serial.print("[http]: "); Serial.println(httpurl);
     // start connection and send HTTP header
     int httpCode = http.GET();
 
     // httpCode will be negative on error
     if (httpCode > 0) {
         // HTTP header has been sent and Server response header has been handled
-        Serial.print("[http] GET... code: "); Serial.println(httpCode);
+        Serial.print("[http] response code: "); Serial.println(httpCode);
 
         // file found at server
         if ( httpCode == HTTP_CODE_OK ) {
@@ -363,13 +367,14 @@ void errorDetect()
     }
     lastBadMillis = now;
     
-    Serial.printf("errorDetect: badCount:%d\n", badCount);
+    //Serial.printf("errorDetect: badCount:%d\n", badCount);
     
     if( badCount > maxBadCount ) { 
         buttonMode = MODE_ERROR;  // signal error
     }
     
     // decay badcount
+    // FIXME: maybe have some mechanism to allow badCount to decay faster with multiple good events?
     if( badCount > 0 ) { badCount--; }
 }
 
