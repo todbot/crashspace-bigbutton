@@ -35,8 +35,9 @@ const char* wifiPasswd = " ";
 #define BUTTON_MSG     "hi+tod"
 #define BUTTON_MINS    "30"
 #define BUTTON_DEBUG   "&debug=1"
-// we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15&debug=1";
+// we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15";
 
+// TODO: can we do this with String() instead of char*?
 const char* httpurl_stat  = BUTTON_BASEURL;  
 const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "&diff_mins_max=" BUTTON_MINS BUTTON_DEBUG;
 
@@ -44,7 +45,7 @@ const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "
 //const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
 // SSL Certificate finngerprint for the host
 
-
+// What mode are we in?  These are the allowed ones
 typedef enum ButtonModes {
     MODE_UNKNOWN = 0,
     MODE_STARTUP,     // not joined AP yet, 
@@ -278,17 +279,15 @@ void fetchJson()
     uint32_t freesize = ESP.getFreeHeap();
     uint32_t chipId = ESP.getChipId();
     
-    Serial.print("[http] begin @"); Serial.print(millis());
-    Serial.print(" id:"); Serial.print( chipId, HEX ); 
-    Serial.print(" freesize:"); Serial.print( freesize );
-    Serial.printf(" IP:%s SSID:%s RSSI:%d dBm\r\n", WiFi.localIP().toString().c_str(), WiFi.SSID().c_str(), WiFi.RSSI());
+    Serial.print(String("[http] @") + millis() +" id:"+ String( chipId, HEX ) +" freesize:"+ freesize );
+    Serial.println(" IP: "+ WiFi.localIP().toString() +" SSID:"+ WiFi.SSID() +" RSSI:"+ WiFi.RSSI() +" dBm");
 
     HTTPClient http;
 
     //http.begin(httpsurl, httpsfingerprint);   // configure traged server and url
     const char* httpurlbase = (doPress) ? httpurl_press : httpurl_stat;
     
-    String httpUrl = String(httpurlbase) + "&chipId=" + String(chipId,HEX) + "&secs="+ (millis()/1000) + "&bc="+ badCount;
+    String httpUrl = String(httpurlbase) +"&chipId="+ String(chipId,HEX) +"&secs="+ (millis()/1000) +"&bc="+ badCount;
     const char* httpurl = httpUrl.c_str();
     
     http.begin(httpurl);
@@ -306,10 +305,10 @@ void fetchJson()
         if ( httpCode == HTTP_CODE_OK ) {
             String payload = http.getString();
             bool goodresponse = handleJson( payload );
-            if( !goodresponse ) {  badCount++;   }
+            if( !goodresponse ) {  badCount++;  }  // bad parse
         }
         else { 
-            badCount++;
+            badCount++; // not a 200 response
         }
     }
     else {
@@ -335,27 +334,25 @@ bool handleJson(String jsonstr)
     // Test if parsing succeeds.
     if (!root.success()) {
         Serial.println("parseObject() failed");
-        // FIXME: add error handling
-        badCount++;
         return false;
     }
 
     bool is_open = root["is_open"];
     double minutes_left = root["minutes_left"];
 
-//    Serial.printf("is_open:%d", is_open); // NOTE: the below fails for -0.99 to -0.01
-//    Serial.printf(", minutes_left: %d.%d\n", (int)minutes_left, getDecimal(minutes_left));
+//    Serial.print("is_open:" + is_open +", minutes_left:" + minutes_left);
 
     if ( minutes_left > 0 ) {
         minutes_left = (minutes_left > 60) ? 60 : minutes_left;
         ledCnt =   NUM_LEDS * minutes_left / 60;  // ranges from 0 - NUM_LEDS
-//        Serial.print("ledCnt:"); Serial.println(ledCnt);
+//        Serial.print("ledCnt:" + ledCnt);
         buttonMode = MODE_OPEN;
     }
     else {
         buttonMode = MODE_CLOSED;
     }
-
+    
+    return true;
 }
 
 // accumulate badness, if too much, trigger error
