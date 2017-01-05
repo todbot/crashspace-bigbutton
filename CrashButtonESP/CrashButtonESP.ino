@@ -1,8 +1,15 @@
 /**
- *  CrashButtonESP
+ *  CrashButtonESP - ESP8266-based BigButton for CrashSpace
  *
  *  Tod E. Kurt / http://todbot.com/
- *
+ *  
+ *  Set Board to be "Wemos D1 R2 & mini"
+ *  
+ *  Requires libraries:
+ *  - FastLED 3.1+ - https://github.com/FastLED/FastLED
+ *  - ArduinoJson - https://github.com/bblanchon/ArduinoJson
+ *  - ESP8266 Arduino core - https://github.com/esp8266/Arduino/
+ *  
  **/
 
 #include <Arduino.h>
@@ -10,7 +17,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
 #include <ESP8266HTTPClient.h>
-#include <Ticker.h>
+#include <Ticker.h>  // part of ESP8266 Arduino core
 
 //#define FASTLED_ALLOW_INTERRUPTS 0
 #define FASTLED_ESP8266_RAW_PIN_ORDER
@@ -21,18 +28,20 @@ FASTLED_USING_NAMESPACE
 
 
 #define NUM_LEDS (1 + 16) // note: first one is "sacrificial" neopixel acting as level converter
-//#define NUM_LEDS 12  // note: first one is "sacrificial" neopixel acting as level converter
 #define LEDPIN D4    // (GPIO2, pin D4 on Mini D1 board) 
-#define BUTTONPIN D1
+#define BUTTONPIN D2
 
-#define BRIGHTNESS 150
+// is the button a momentary (std tact switch) or an on/off toggle (as in tap lights)
+const bool pressIsToggle = true;
+
+const int brightnessDefault = 150;
 
 const char* wifiSSID = "todbot-back";
 const char* wifiPasswd = " ";
 
 #define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
 #define BUTTON_ID      "espbutton1"
-#define BUTTON_MSG     "hi+tod"
+#define BUTTON_MSG     "Someone+at+the+space"
 #define BUTTON_MINS    "30"
 #define BUTTON_DEBUG   "&debug=1"
 // we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15";
@@ -48,11 +57,12 @@ const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "
 // What mode are we in?  These are the allowed ones
 typedef enum ButtonModes {
     MODE_UNKNOWN = 0,
-    MODE_STARTUP,     // not joined AP yet, 
-    MODE_CLOSED,      // "closed" button hasn't been pressed in a while, color: yellow 
-    MODE_PRESSED,     // user pressed button, but before app has fetched state
-    MODE_OPEN,        // shows current open time 
-    MODE_ERROR        // error of some kind, flash error, color: red
+    MODE_STARTUP,      // not joined AP yet, 
+    MODE_CLOSED,       // "closed" button hasn't been pressed in a while, color: yellow 
+    MODE_PRESSED,      // user pressed button, but before app has fetched state
+    MODE_PRESSED_GOOD, // user pressed button, but before app has fetched state
+    MODE_OPEN,         // shows current open time 
+    MODE_ERROR         // error of some kind, flash error, color: red
 } ButtonMode;
 
 typedef enum LedModes {
@@ -66,18 +76,15 @@ typedef enum LedModes {
     MODE_RAINBOW
 } LedMode;
 
-ButtonMode buttonMode = MODE_STARTUP;
-LedMode ledMode = MODE_OFF;
+const int rainbowTime = 2 * 1000;  // duration of rainbow when pressing button
 
-Ticker ledticker;
-ESP8266WiFiMulti WiFiMulti;
-
-
-const int fetchMillis = 3* 1000;  // how often API URL is checked
+const int fetchMillis = 15 * 1000;  // how often API URL is checked
 uint32_t lastFetchMillis = 0;
 
-const uint32_t buttonMillis = 60 * 1000; // min time between valid presses
-uint32_t lastButtonTime;
+const uint32_t buttonCheckMillis = 60 * 1000; // min time between valid presses
+uint32_t lastButtonCheckTime;
+int lastButtonState; // state of last button (if using pressIsToggle)
+uint32_t buttonPressTime = 0;
 
 const uint8_t ledUpdateMillis = 50; // how often LEDs are updated
 
@@ -86,8 +93,8 @@ int maxBadCount = 5;    // how many bad events to become an error light
 const uint32_t badMillis = 10 * 1000; // how long until badness becomes an error
 uint32_t lastBadMillis = 0;
 
-bool doPress = false; // was button pressed? (causes submit to API server)
 
+// args for ledMode, basically, hmmm.
 uint8_t ledHue = 0; // rotating "base color" used by many of the patterns
 int ledSpeed = 100;
 int ledCnt = NUM_LEDS;
@@ -96,13 +103,20 @@ int ledRangeH = 255;
 
 CRGB leds[NUM_LEDS];
 
+ButtonMode buttonMode = MODE_STARTUP;
+LedMode ledMode = MODE_OFF;
+
+Ticker ledticker;
+ESP8266WiFiMulti WiFiMulti;
+
+
 //
 void setup()
 {
     Serial.begin(115200);
-//    Serial.setDebugOutput(true);
-    WiFi.disconnect(true);   // delete old config
-//    WiFi.setAutoConnect( false );
+    //Serial.setDebugOutput(true);
+    //WiFi.disconnect(true);   // delete old config
+    //WiFi.setAutoConnect( false );
  
     Serial.println("\nCrashButtonESP: " BUTTON_ID );
     delay(1500);    
@@ -110,10 +124,11 @@ void setup()
     WiFi.printDiag(Serial);
 
     pinMode( BUTTONPIN, INPUT_PULLUP);
+    lastButtonState = digitalRead( BUTTONPIN );
     
     FastLED.addLeds<WS2812, LEDPIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-    FastLED.setBrightness(BRIGHTNESS);
-    fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
+    FastLED.setBrightness( brightnessDefault );
+    fill_solid(leds, NUM_LEDS, CRGB(255, 0, 255));
     FastLED.show();
     
     for (uint8_t t = 4; t > 0; t--) {
@@ -125,10 +140,9 @@ void setup()
     
     WiFiMulti.addAP(wifiSSID, wifiPasswd);
     
-    Serial.println("[setup] done");
-    
     ledticker.attach_ms( ledUpdateMillis, ledUpdate );
-    
+
+    Serial.println("[setup] done");
 }
 
 //
@@ -138,19 +152,14 @@ void loop()
     int rc = WiFiMulti.run();
     if ( (rc == WL_CONNECTED) ) {
         fetchJson();
-    } else {
-        //buttonMode = MODE_ERROR;
+    } 
+    else {
         badCount++;
         Serial.print("WiFi not connected: "); Serial.println(rc);
         WiFi.printDiag(Serial);
-        //blinkBuiltIn( 2, 50);
         delay(1000); // delay still services background tasks for WiFi connect
     }
-
-    if( doPress ) { Serial.println("PRESS"); }
-//    if( doLedShow ) { FastLED.show(); doLedShow = false; } 
     
-    //delay(50); // allow WiFi stack to run and rate-limit continuous button presses
 }
 
 // Convert app state to LED commands
@@ -159,7 +168,6 @@ void buttonModeToLedMode()
     if( buttonMode == MODE_STARTUP ) { 
         ledHue = 192; 
         ledMode = MODE_BREATHE;
-//        ledCnt = NUM_LEDS;
         ledSpeed = 100;
         ledRangeL = 0;
         ledRangeH = 255;
@@ -170,14 +178,26 @@ void buttonModeToLedMode()
         ledCnt = NUM_LEDS;
         ledSpeed = 15;
         ledRangeL = 100;
-        ledRangeH = 255;        
+        ledRangeH = 255;
     }
     else if( buttonMode == MODE_PRESSED ) { 
-//        ledMode = MODE_SOLID; // fixme
-//        ledHue = 128; // cyan
-//        ledCnt = NUM_LEDS;
         ledMode = MODE_RAINBOW;
         ledCnt = NUM_LEDS;
+        ledSpeed = millis() / 5;
+        if( !buttonPressTime ) { 
+            buttonPressTime = millis();
+        } else {  // HACK FIXME: this whole buttonMode to ledMode idea not very good
+            if( (millis() - buttonPressTime) > rainbowTime ) {
+                //Serial.println("DOING THE HACK!");
+                buttonMode = MODE_OPEN;
+                buttonPressTime = 0;   
+            }
+        }
+    }
+    else if( buttonMode == MODE_PRESSED_GOOD ) { 
+        ledMode = MODE_RAINBOW;
+        ledCnt = NUM_LEDS;
+        ledSpeed = millis() / 10;
     }
     else if( buttonMode == MODE_OPEN ) {
         ledHue = 128; // aqua
@@ -226,7 +246,7 @@ void ledUpdate()
         fill_solid( leds, NUM_LEDS, 0 );
         fill_solid( leds, ledCnt, CHSV(ledHue, 255, breathe) );
         if( ledCnt < NUM_LEDS ) { 
-            leds[ledCnt] = CHSV(ledHue, 120, breathe); //CRGB(breathe,breathe,breathe);
+            leds[ledCnt] = CHSV(64, 255, breathe); //CRGB(breathe,breathe,breathe);
         }
     }
     else if ( ledMode == MODE_SINELON ) {
@@ -236,7 +256,8 @@ void ledUpdate()
         leds[pos] += CHSV( ledHue, 255, 255);
     }
     else if( ledMode == MODE_RAINBOW ) { 
-        fill_rainbow( leds, ledCnt, millis()/5, 255 / ledCnt );
+//        fill_rainbow( leds, ledCnt, millis()/5, 255 / ledCnt );
+        fill_rainbow( leds, ledCnt, ledSpeed, 255 / ledCnt ); // 255/ledCnt means rainbow oroboros itself
     }
     else if( ledMode == MODE_PRESET ) {
         // do nothing
@@ -248,22 +269,22 @@ void ledUpdate()
 // check our button
 void buttonCheck()
 {
-    int b = digitalRead( BUTTONPIN );
-    if ( b == HIGH  ) { // not pressed
-        return;
-    }
-    //Serial.println("PRESS");
-
-    buttonMode = MODE_PRESSED;
-
     uint32_t now = millis();   
-//    if ( (now < buttonMillis) && ((now - lastButtonTime) > buttonMillis) ) {
-    if ( (now - lastButtonTime) > buttonMillis ) {
-        //Serial.println("PRESS for reals");
-        lastButtonTime = millis();
-        doPress = true;
-        lastFetchMillis -= fetchMillis; // signal: do fetch now
+    
+    int b = digitalRead( BUTTONPIN );
+    int lastb = (pressIsToggle) ? lastButtonState : LOW;
+    lastButtonState = b; // save current button state
+    if( b == lastb ) {
+        return;  // not pressed
     }
+    
+    buttonMode = MODE_PRESSED;
+    
+    if ( (now - lastButtonCheckTime) > buttonCheckMillis || (now < buttonCheckMillis) ) {
+        lastButtonCheckTime = now;
+        buttonMode = MODE_PRESSED_GOOD;
+        lastFetchMillis -= fetchMillis; // signal: do fetch now
+    }    
 }
 
 //
@@ -279,13 +300,14 @@ void fetchJson()
     uint32_t freesize = ESP.getFreeHeap();
     uint32_t chipId = ESP.getChipId();
     
-    Serial.print(String("[http] @") + millis() +" id:"+ String( chipId, HEX ) +" freesize:"+ freesize );
+    Serial.print(String("[http] @") + millis() +" id:"+ String( chipId, HEX ) +" freesize:"+ freesize +" mode:"+buttonMode );
     Serial.println(" IP: "+ WiFi.localIP().toString() +" SSID:"+ WiFi.SSID() +" RSSI:"+ WiFi.RSSI() +" dBm");
 
     HTTPClient http;
-
+    bool isPressed = (buttonMode == MODE_PRESSED_GOOD);
+    
     //http.begin(httpsurl, httpsfingerprint);   // configure traged server and url
-    const char* httpurlbase = (doPress) ? httpurl_press : httpurl_stat;
+    const char* httpurlbase = (isPressed) ? httpurl_press : httpurl_stat;
     
     String httpUrl = String(httpurlbase) +"&chipId="+ String(chipId,HEX) +"&secs="+ (millis()/1000) +"&bc="+ badCount;
     const char* httpurl = httpUrl.c_str();
@@ -313,13 +335,10 @@ void fetchJson()
     }
     else {
         Serial.printf("[http] GET... failed, error: \n%s\n", http.errorToString(httpCode).c_str());
-        // buttonMode = MODE_ERROR;
         badCount++;
     }
 
     http.end();
-
-    doPress = false;  // say we handled the button press
   
     delay(100); // FIXME: why is this here?
 }
@@ -337,7 +356,7 @@ bool handleJson(String jsonstr)
         return false;
     }
 
-    bool is_open = root["is_open"];
+    bool is_open = root["is_open"];  // wow, ArduinoJson is a cool hack
     double minutes_left = root["minutes_left"];
 
 //    Serial.print("is_open:" + is_open +", minutes_left:" + minutes_left);
