@@ -93,7 +93,6 @@ int maxBadCount = 5;    // how many bad events to become an error light
 const uint32_t badMillis = 10 * 1000; // how long until badness becomes an error
 uint32_t lastBadMillis = 0;
 
-
 // args for ledMode, basically, hmmm.
 uint8_t ledHue = 0; // rotating "base color" used by many of the patterns
 int ledSpeed = 100;
@@ -128,13 +127,12 @@ void setup()
     
     FastLED.addLeds<WS2812, LEDPIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness( brightnessDefault );
-    fill_solid(leds, NUM_LEDS, CRGB(255, 0, 255));
+    fill_solid(leds, NUM_LEDS, CRGB(155, 0, 155));
     FastLED.show();
     
     for (uint8_t t = 4; t > 0; t--) {
         Serial.printf("[setupa] waiting %d...\n", t);
         Serial.flush();
-        ledCnt = ledCnt - (ledCnt / 3);  // countdown light for fun
         delay(800);
     }
     
@@ -190,7 +188,6 @@ void buttonModeToLedMode()
             if( (millis() - buttonPressTime) > rainbowTime ) {
                 //Serial.println("DOING THE HACK!");
                 buttonMode = MODE_OPEN;
-                buttonPressTime = 0;   
             }
         }
     }
@@ -279,6 +276,7 @@ void buttonCheck()
     }
     
     buttonMode = MODE_PRESSED;
+    buttonPressTime = 0;
     
     if ( (now - lastButtonCheckTime) > buttonCheckMillis || (now < buttonCheckMillis) ) {
         lastButtonCheckTime = now;
