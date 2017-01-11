@@ -1,0 +1,28 @@
+#define NUM_LEDS (12) // note: first one is "sacrificial" neopixel acting as level converter
+#define LEDPIN D4    // (GPIO2, pin D4 on Mini D1 board) 
+#define BUTTONPIN D2
+
+// is the button a momentary (std tact switch) or an on/off toggle (as in tap lights)
+const bool pressIsToggle = true;
+
+const int brightnessDefault = 150;
+
+const char* wifiSSID = "crashspacela";
+const char* wifiPasswd = "password4fails";
+
+#define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
+#define BUTTON_ID      "crashbutton1"
+#define BUTTON_MSG     "Someone+is+at+the+space!"
+#define BUTTON_MINS    "60"
+#define BUTTON_DEBUG   "&debug=0"
+
+// we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15";
+
+// TODO: can we do this with String() instead of char*?
+const char* httpurl_stat  = BUTTON_BASEURL;  
+const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "&diff_mins_max=" BUTTON_MINS BUTTON_DEBUG;
+
+//const char* httpsurl = "https://crashspacela.com/sign2/?output=jsonmin";
+//const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
+// SSL Certificate finngerprint for the host
+

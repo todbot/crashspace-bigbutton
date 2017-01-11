@@ -26,33 +26,8 @@ FASTLED_USING_NAMESPACE
 
 #include <ArduinoJson.h>
 
+#include "CrashButtonConfig.h"
 
-#define NUM_LEDS (1 + 16) // note: first one is "sacrificial" neopixel acting as level converter
-#define LEDPIN D4    // (GPIO2, pin D4 on Mini D1 board) 
-#define BUTTONPIN D2
-
-// is the button a momentary (std tact switch) or an on/off toggle (as in tap lights)
-const bool pressIsToggle = true;
-
-const int brightnessDefault = 150;
-
-const char* wifiSSID = "todbot-back";
-const char* wifiPasswd = " ";
-
-#define BUTTON_BASEURL "http://crashspacela.com/sign2/?output=jsonmin"
-#define BUTTON_ID      "espbutton1"
-#define BUTTON_MSG     "Someone+at+the+space"
-#define BUTTON_MINS    "30"
-#define BUTTON_DEBUG   "&debug=1"
-// we want "http://crashspacela.com/sign2/?output=jsonmin&id=espbutton&msg=hi+tod&diff_mins_max=15";
-
-// TODO: can we do this with String() instead of char*?
-const char* httpurl_stat  = BUTTON_BASEURL;  
-const char* httpurl_press = BUTTON_BASEURL "&id=" BUTTON_ID "&msg=" BUTTON_MSG "&diff_mins_max=" BUTTON_MINS BUTTON_DEBUG;
-
-//const char* httpsurl = "https://crashspacela.com/sign2/?output=jsonmin";
-//const char* httpsfingerprint = "78 42 D1 58 CC A4 1D C5 CA 1F F2 FE C5 DA 68 BA A8 D9 85 CD";
-// SSL Certificate finngerprint for the host
 
 // What mode are we in?  These are the allowed ones
 typedef enum ButtonModes {
@@ -76,7 +51,7 @@ typedef enum LedModes {
     MODE_RAINBOW
 } LedMode;
 
-const int rainbowTime = 2 * 1000;  // duration of rainbow when pressing button
+const int rainbowTime = 5 * 1000;  // duration of rainbow when pressing button
 
 const int fetchMillis = 15 * 1000;  // how often API URL is checked
 uint32_t lastFetchMillis = 0;
