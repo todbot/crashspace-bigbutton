@@ -1,2 +1,5 @@
 # don't check in real credentials
 CrashSpaceConfig.h
+
+# emacs 
+*~
