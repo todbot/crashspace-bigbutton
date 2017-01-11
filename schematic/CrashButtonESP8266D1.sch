@@ -3485,7 +3485,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY28" library="SparkFun-PowerSymbols" deviceset="VIN" device=""/>
 <part name="SUPPLY1" library="SparkFun-PowerSymbols" deviceset="VIN" device=""/>
 <part name="FRAME1" library="SparkFun-Aesthetics" deviceset="FRAME-A4L" device=""/>
-<part name="R2" library="SparkFun-Resistors" deviceset="470OHM" device="-0603-1/10W-1%" value="220"/>
+<part name="R2" library="SparkFun-Resistors" deviceset="470OHM" device="-0603-1/10W-1%" value="1k"/>
 <part name="GND29" library="SparkFun-PowerSymbols" deviceset="GND" device=""/>
 <part name="J2" library="SparkFun-Connectors" deviceset="CONN_02" device=""/>
 </parts>

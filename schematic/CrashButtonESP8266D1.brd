@@ -191,6 +191,12 @@
 <vertex x="8.382" y="17.018"/>
 <vertex x="8.382" y="24.13"/>
 </polygon>
+<polygon width="0.254" layer="42">
+<vertex x="-8.382" y="24.13"/>
+<vertex x="-8.382" y="17.018"/>
+<vertex x="8.382" y="17.018"/>
+<vertex x="8.382" y="24.13"/>
+</polygon>
 </plain>
 <libraries>
 <library name="SparkFun-Switches">
@@ -786,7 +792,7 @@ Please make sure your boards conform to these design rules.</description>
 <attribute name="VALUE" x="-13.462" y="-21.59" size="0.6096" layer="27" font="vector" ratio="20" rot="R270"/>
 </element>
 <element name="WEMOS1" library="esp8266modules" package="WEMOS-D1-MINI" value="ESP8266" x="-1.27" y="7.62"/>
-<element name="R2" library="SparkFun-Resistors" package="0603" value="220" x="22.86" y="11.43" rot="R270">
+<element name="R2" library="SparkFun-Resistors" package="0603" value="1k" x="22.86" y="11.43" rot="R270">
 <attribute name="PROD_ID" value="RES-07869" x="22.86" y="11.43" size="1.778" layer="27" rot="R270" display="off"/>
 </element>
 <element name="J2" library="SparkFun-Connectors" package="1X02" value="" x="22.86" y="27.94" smashed="yes" rot="R270">
