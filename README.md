@@ -5,13 +5,14 @@ Firmware and schematics for the [CrashSpace](https://blog.crashspace.org/)
 
 <img src="./docs/bigbutton-header.jpg">
 
-The BigButton is a simple internet-connected button that allows
-[CrashSpace](https://blog.crashspace.org/) members to notify others that
-the space is open via a publicly-viewable website:
-https://crashspacela.com/sign/
+At [CrashSpace](https://blog.crashspace.org/) we have a publicly-viewable
+"sign" at https://crashspacela.com/sign/ to let members know when the
+space is open. This sign page is updated by a big button in the front
+room.  Press it, the sign webpage updates, and you've promised to be
+in the space for an hour.
 
-Pushing the button indicates you promise to be at the space for at least
-an hour.  The button & the site both count down to zero.
+This repo is documentation of the new BigButton hardware that was installed
+at CrashSpace in Jan 2017.
 
 ## Functionality
 
@@ -29,7 +30,7 @@ an hour.  The button & the site both count down to zero.
 ## In use
 
   * Button is pulsing ORANGE: CrashSpace is closed
-  * Push Button.  Button makes a RAINBOW for a second or two
+  * Push Button.  Button spins a RAINBOW for a second or two, then
   * Button is pulsing TEAL: CrashSpace is open
   * Button counts down my extinguishing TEAL LEDs in an arc
   * Button flashing RED: Internet is down
@@ -37,7 +38,7 @@ an hour.  The button & the site both count down to zero.
 ## Implementation
 
 The original implementation was an Arduino Uno with WS2812 LEDs inside a
-large taplight hooked to a Linux netbook for WiFi connectivity.
+large taplight tied to a Linux netbook for WiFi connectivity.
 An upgrade button created several years late used an early version of the
 Particle Photon Internet Button kit in a custom 3d printed enclosure.
 
@@ -46,7 +47,7 @@ custom carrier board containing 12 WS2812 LEDs.  It uses the ESP8266
 Arduino core to run an Arduino sketch.
 
 
-## Implementation - Hardware
+### Implementation - Hardware
 
 The hardware implementation is simple.
 The Wemos D1 mini ESP8266 board does most of the work.
@@ -57,7 +58,7 @@ The schematic and layout for the carrier board is pretty simple.
 <img src="./docs/CrashButtonESPD1-brd.png" width=650>
 
 
-### Converting 3v3 ESP8266 output for WS2812 / Neopixel  LEDs
+#### Converting 3v3 ESP8266 output for WS2812 / Neopixel  LEDs
 
 One interesting thing about the schematic how the ESP8266 (a 3v3 device)
 manages to control 5V WS2812/Neopixel LEDs.  Some WS2812s can be driven by 3v3 logic HIGH, but it's iffy.  The standard solution is a level-shifter buffer to convert 3v3 HIGH to 5V HIGH.
@@ -66,36 +67,61 @@ The technique used on this board, however, is to create a "sacrificial" LED that
 
 #### Othermill design considerations
 
-I wanted this board to be millable on an Othermill, so the
+I wanted this board to be millable on an Othermill, so that meant adopting slightly different PCB design techniques.  There are a few reasons for this. For instance, because this board has no soldermask, I want to maximize spacing between copper traces.  Also, I would like to minimize the use of endmills smaller than 1/32" because they are fragile and take a long time to mill.  Thus, the techniques I use are:
+
+* Increase trace width 16 mil (0.016")
+* Add ground plane, set its Polygon->Isolate value to 32 mil (0.032")
+* Single-sided only design (or minimize back-side traces)
+* Space components out to enable easy soldering
+
+The result is below. The Wemos D1 Mini ESP8266 board is mounted on the
+backside of the board to minimize its impact on light output.  
+The board is mounted on standoffs which are screwed into the modified
+taplight. The taplight's switch is reused as the button input.
 
 <img src="./docs/bigbutton-front-back.jpg">
 
+<img src="./docs/bigbutton-assembly.jpg">
 
 
 
-## Implementation - Firmware
+### Implementation - Firmware
 
-This board runs the ["CrashButtonESP"](./CrashButtonESP/) Arduino sketch.
+The ESP8266 runs the ["CrashButtonESP"](./CrashButtonESP/) Arduino sketch.
 
-talk about json feed
+#### ArduinoJson is awesome
 
-talk about ArduinoJson
+The sketch relies on the ArduinoJson library.
+With it you can easily parse and use JSON data structures.
+And with its magical use of C++ operator-overloading you can have code
+like this:
 
-### CrashSpace sign server JSON API
+```c++
+// jsonstr = '{"is_open":false,"minutes_left":-920.45,"button_presses":[]}'
+JsonObject& root = jsonBuffer.parseObject(jsonstr);
+bool is_open        = root["is_open"];
+double minutes_left = root["minutes_left"];
+```
 
-To enable the ability of the button to report real open status
-(and not just a dumb countdown), the sign server API has been updated to have a JSON output mode.  There are two versions of JSON output:
-a "minimal" version that just gives open status and minutes left,
-and a full version that gives a list of recent button presses.
+#### CrashSpace sign server JSON API
+
+To enable the button to report real open status
+(and not just a dumb countdown), the sign server API at
+https://crashspacela.com/sign/
+has been updated with a JSON output mode.  There are two versions
+of JSON output, picked with the `output` query arg:
+* `jsonmin` - "minimal" version with just open status and minutes left
+* `json`  - full version that gives a list of recent button presses
+
 The Button uses the minimal one.  Both are shown below:
 
 ```json
-% curl 'crashspacela.com/sign/?output=jsonmin'
+% curl 'https://crashspacela.com/sign/?output=jsonmin'
 {"is_open":false,"minutes_left":-920.45,"button_presses":[]}
 ```
 
 ```json
-% curl 'crashspacela.com/sign/?output=json'
+% curl 'https://crashspacela.com/sign/?output=json'
 {
     "is_open": false,
     "minutes_left": -919.43333333333,
