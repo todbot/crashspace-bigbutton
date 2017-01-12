@@ -65,7 +65,7 @@ const uint8_t ledUpdateMillis = 50; // how often LEDs are updated
 
 int badCount;
 int maxBadCount = 5;    // how many bad events to become an error light
-const uint32_t badMillis = 10 * 1000; // how long until badness becomes an error
+const uint32_t badMillis = 30 * 1000; // time between bad checks 
 uint32_t lastBadMillis = 0;
 
 // args for ledMode, basically, hmmm.
@@ -102,7 +102,7 @@ void setup()
     
     FastLED.addLeds<WS2812, LEDPIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     FastLED.setBrightness( brightnessDefault );
-    fill_solid(leds, NUM_LEDS, CRGB(155, 0, 155));
+    fill_solid(leds, NUM_LEDS, CRGB(55, 0, 55));
     FastLED.show();
     
     for (uint8_t t = 4; t > 0; t--) {
@@ -143,7 +143,7 @@ void buttonModeToLedMode()
         ledMode = MODE_BREATHE;
         ledSpeed = 100;
         ledRangeL = 0;
-        ledRangeH = 255;
+        ledRangeH = 155;
     }
     else if( buttonMode == MODE_CLOSED ) {
         ledHue = 64; // yellow
@@ -356,9 +356,9 @@ void errorDetect()
     }
     lastBadMillis = now;
     
-    //Serial.printf("errorDetect: badCount:%d\n", badCount);
+    Serial.printf("errorDetect: badCount:%d\n", badCount);
     
-    if( badCount > maxBadCount ) { 
+    if( badCount >= maxBadCount ) { 
         buttonMode = MODE_ERROR;  // signal error
     }
     
