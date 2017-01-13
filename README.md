@@ -37,33 +37,37 @@ at CrashSpace in Jan 2017.
 
 ## Implementation
 
-The original implementation was an Arduino Uno with WS2812 LEDs inside a
+The original BigButton implementation was an Arduino Uno with WS2812 LEDs inside a
 large taplight tied to a Linux netbook for WiFi connectivity.
 An upgrade button created several years late used an early version of the
 Particle Photon Internet Button kit in a custom 3d printed enclosure.
 
-This version uses an ESP82166 Wemos D1 mini WiFi board mounted to a
-custom carrier board containing 12 WS2812 LEDs.  It uses the ESP8266
-Arduino core to run an Arduino sketch.
+This version of BigButton uses an
+[ESP82166 Wemos D1 mini](https://www.wemos.cc/product/d1-mini.html)
+WiFi board mounted to a custom carrier board containing 12 WS2812 LEDs.
+It uses the [ESP8266 Arduino core](https://github.com/esp8266/Arduino/)
+to run an Arduino sketch.
 
 
 ### Implementation - Hardware
 
-The hardware implementation is simple.
-The Wemos D1 mini ESP8266 board does most of the work.
-The I/O is a single button and a string of WS2812 LEDs.
+The hardware implementation is pretty straight forward.
+The Wemos D1 mini ESP8266 board does all the work.
+The input is a single button and the output is a string of WS2812 LEDs.
 
-The schematic and layout for the carrier board is pretty simple.
+The schematic and layout for the carrier board is:
+
 <img src="./docs/CrashButtonESPD1-sch.png" width=650>
 <img src="./docs/CrashButtonESPD1-brd.png" width=650>
 
+Eagle format versions of these are in the [schematic](./schematic) folder.
 
 #### Converting 3v3 ESP8266 output for WS2812 / Neopixel  LEDs
 
 One interesting thing about the schematic how the ESP8266 (a 3v3 device)
 manages to control 5V WS2812/Neopixel LEDs.  Some WS2812s can be driven by 3v3 logic HIGH, but it's iffy.  The standard solution is a level-shifter buffer to convert 3v3 HIGH to 5V HIGH.
 
-The technique used on this board, however, is to create a "sacrificial" LED that powered not by 5V but by a stepped-down voltage from a standard 1.2V diode.  This approx. 3.8V power source is high enough to drive the LED but brings its concept of logic HIGH (which is 70% of Vcc) down to what a 3v3 device will output.  Basically, we're special intermediary power supply for a single LED. The rest of the WS2812 LEDs are driven by 5V.
+The technique used on this board, however, is to create a "sacrificial" LED that powered not by 5V but by a stepped-down voltage from a standard signal diode, which has a 0.7V voltage drop.  This creates an approx. 4.3V power source is high enough to drive the LED but brings its concept of logic HIGH (which is 70% of Vcc) down to what a 3v3 device will output.  Basically, we're special intermediary power supply for a single LED. The rest of the WS2812 LEDs are driven by 5V.
 
 #### Othermill design considerations
 
@@ -82,7 +86,6 @@ taplight. The taplight's switch is reused as the button input.
 <img src="./docs/bigbutton-front-back.jpg">
 
 <img src="./docs/bigbutton-assembly.jpg">
-
 
 
 ### Implementation - Firmware
