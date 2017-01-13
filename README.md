@@ -14,6 +14,18 @@ in the space for an hour.
 This repo is documentation of the new BigButton hardware that was installed
 at CrashSpace in Jan 2017.
 
+## Table of Contents
+
+* [Functionality](#functionality)
+* [In use](#in-use)
+* [Implementation](#implementation)
+ * [Implementation - Hardware](#implementation---hardware)
+    * [Converting 3v3 ESP8266 output for WS2812 / Neopixel  LEDs](#converting-3v3-esp8266-output-for-ws2812--neopixel--leds)
+    * [Othermill design considerations](#othermill-design-considerations)
+ * [Implementation - Firmware](#implementation---firmware)
+    * [ArduinoJson is awesome](#arduinojson-is-awesome)
+    * [CrashSpace sign server JSON API](#crashspace-sign-server-json-api)
+
 ## Functionality
 
 * The BigButton consists of a pushbutton and a ring of LEDs
