@@ -67,7 +67,10 @@ Eagle format versions of these are in the [schematic](./schematic) folder.
 One interesting thing about the schematic how the ESP8266 (a 3v3 device)
 manages to control 5V WS2812/Neopixel LEDs.  Some WS2812s can be driven by 3v3 logic HIGH, but it's iffy.  The standard solution is a level-shifter buffer to convert 3v3 HIGH to 5V HIGH.
 
-The technique used on this board, however, is to create a "sacrificial" LED that powered not by 5V but by a stepped-down voltage from a standard signal diode, which has a 0.7V voltage drop.  This creates an approx. 4.3V power source is high enough to drive the LED but brings its concept of logic HIGH (which is 70% of Vcc) down to what a 3v3 device will output.  Basically, we're special intermediary power supply for a single LED. The rest of the WS2812 LEDs are driven by 5V.
+The technique used on this board, however, is to create a "sacrificial" LED that powered not by 5V but by a stepped-down voltage from a standard signal diode
+(with its 0.7V voltage drop).  This creates an approx. 4.3V power source that is high enough to drive the LED but brings its concept of logic HIGH (>70% of Vcc) down to what a 3v3 device will output.  Basically, we're building a
+special intermediary power supply for a single LED.
+The rest of the WS2812 LEDs are driven by 5V.
 
 #### Othermill design considerations
 
