@@ -84,6 +84,8 @@ The technique used on this board, however, is to create a "sacrificial" LED that
 special intermediary power supply for a single LED.
 The rest of the WS2812 LEDs are driven by 5V.
 
+<img src="./docs/sacrificial-neopixel.png">
+
 #### Othermill design considerations
 
 I wanted this board to be millable on an Othermill, so that meant adopting slightly different PCB design techniques.  There are a few reasons for this. For instance, because this board has no soldermask, I want to maximize spacing between copper traces.  Also, I would like to minimize the use of endmills smaller than 1/32" because they are fragile and take a long time to mill.  Thus, the techniques I use are:
