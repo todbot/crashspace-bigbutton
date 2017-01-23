@@ -7,7 +7,7 @@ cache:
 
 install:
     - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
-    - cp CrashSpaceESP/CrashButtonConfig.h.example CrashButtonESP/CrashButtonConfig.h
+    - cp CrashButtonESP/CrashButtonConfig.h.example CrashButtonESP/CrashButtonConfig.h
 
 script:
     - platformio ci --project-conf CrashButtonESP/platformio.ini CrashButtonESP
