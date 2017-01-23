@@ -1,0 +1,13 @@
+language: python
+python:
+    - "2.7"
+cache:
+    directories:
+        - "~/.platformio"
+
+install:
+    - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
+
+script:
+    - platformio ci --project-conf CrashButtonESP/platformio.ini CrashButtonESP
+#    - platformio ci blink/src --board=uno --board=due --board=teensy31 --board=esp01
