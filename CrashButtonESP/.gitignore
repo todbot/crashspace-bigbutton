@@ -1,5 +1,9 @@
 # don't check in real credentials
 CrashSpaceConfig.h
 
-# emacs 
+# emacs
 *~
+
+# platformio
+.pioenvs
+.piolibdeps
