@@ -1,5 +1,7 @@
 # crashspace-bigbutton
 
+[![Build Status](https://travis-ci.org/todbot/crashspace-bigbutton.svg?branch=master)](https://travis-ci.org/todbot/crashspace-bigbutton)
+
 Firmware and schematics for the [CrashSpace](https://blog.crashspace.org/)
 "BigButton" hardware interface to https://crashspacela.com/sign/
 
